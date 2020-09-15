@@ -202,7 +202,7 @@ dependencies {
   compile group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.13.2'
 
   compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-core', version: '9.0.35'
-  compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-websocket', version: '9.0.35'
+  compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-websocket', version: '9.0.38'
 
   compile group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.9'
   compile group: 'net.minidev', name: 'json-smart', version: '2.3'
