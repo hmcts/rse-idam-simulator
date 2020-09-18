@@ -170,7 +170,8 @@ def versions = [
   junitPlatform   : '1.6.2',
   reformLogging   : '5.1.5',
   springBoot      : springBoot.class.package.implementationVersion,
-  springfoxSwagger: '2.9.2'
+  springfoxSwagger: '2.9.2',
+  lombok: '1.18.8'
 ]
 
 ext.libraries = [
@@ -206,6 +207,10 @@ dependencies {
 
   compile group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.9'
   compile group: 'net.minidev', name: 'json-smart', version: '2.3'
+
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: versions.lombok
+
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: versions.lombok
 
   testCompile(group: 'org.springframework.boot', name: 'spring-boot-starter-test')
 

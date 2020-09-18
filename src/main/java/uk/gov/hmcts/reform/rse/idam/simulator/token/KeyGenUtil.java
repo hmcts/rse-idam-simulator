@@ -4,8 +4,8 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 
-@SuppressWarnings("PMD")
-public class KeyGenUtil {
+@SuppressWarnings("PMD.NonThreadSafeSingleton")
+public final class KeyGenUtil {
 
     private static RSAKey rsaJwk;
     private static final String KEY_ID = "23456789";
