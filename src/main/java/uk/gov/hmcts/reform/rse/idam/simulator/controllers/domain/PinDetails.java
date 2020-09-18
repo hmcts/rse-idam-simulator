@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
+package uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain;
 
 public class PinDetails {
 
