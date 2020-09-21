@@ -1,7 +1,0 @@
-description: A Helm chart for rse-idam-simulator
-name: rse-idam-simulator
-apiVersion: v1
-home: https://github.com/hmcts/rse-idam-simulator
-version: 0.0.7
-maintainers:
-  - name: HMCTS Software Engineering Team

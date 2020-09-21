@@ -1,6 +1,0 @@
-java:
-  applicationPort: 5556
-  image: 'hmctspublic.azurecr.io/rse/idam-simulator:latest'
-  ingressHost: rse-idam-simulator-{{ .Values.global.environment }}.service.core-compute-{{ .Values.global.environment }}.internal
-  aadIdentityName: rse
-  environment:
