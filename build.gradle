@@ -108,17 +108,9 @@ jacocoTestReport {
   }
 }
 
-project.tasks['sonarqube'].dependsOn jacocoTestReport
 
 check.dependsOn(integration)
 
-sonarqube {
-  properties {
-    property "sonar.projectName", "Reform :: rse-idam-simulator"
-    property "sonar.projectKey", "uk.gov.hmcts.reform:rse-idam-simulator"
-    property "sonar.coverage.jacoco.xmlReportPaths", "${jacocoTestReport.reports.xml.destination.path}"
-  }
-}
 
 // before committing a change, make sure task still works
 dependencyUpdates {
