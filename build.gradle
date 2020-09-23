@@ -216,10 +216,6 @@ dependencies {
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-contract-wiremock', version: '2.2.4.RELEASE'
 
-  //testImplementation group: 'com.github.tomakehurst', name:'wiremock-jre8', version: '2.26.3'
-
-
-
   integrationTestImplementation sourceSets.main.runtimeClasspath
   integrationTestImplementation sourceSets.test.runtimeClasspath
 
