@@ -1,0 +1,8 @@
+---
+idam:
+  api:
+    url: 'http://localhost:5556'
+  client:
+    id: 'bsp'
+    secret: '123456'
+    redirect_uri: 'https://localhost:5556/receiver'

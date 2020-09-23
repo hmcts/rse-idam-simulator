@@ -16,6 +16,12 @@ simulator:
     issuer: http://fr-am:8080/openam/oauth2/hmcts
     expiration: 14400000 # milliseconds 4 hours
 
+logging:
+  level:
+    org.springframework.web: DEBUG
+    uk.gov.hmcts.reform.divorce.orchestration: DEBUG
+  pattern:
+    console: "%d{yyyy-MMM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{15} - %msg%n"
 
 #If you use a database then uncomment below lines and update db properties accordingly
 spring:
