@@ -19,7 +19,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
-@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class},
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yml")
 @EnableAutoConfiguration
 @RunWith(SpringRunner.class)
