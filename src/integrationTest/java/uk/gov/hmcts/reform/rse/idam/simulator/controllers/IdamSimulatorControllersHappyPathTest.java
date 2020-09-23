@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
 @WebMvcTest
-public class SimulatorHappyPathTest {
+public class IdamSimulatorControllersHappyPathTest {
 
     public static final String AUTHORIZATION = "authorization";
     public static final String BEARER_FOO = "bearer foo";

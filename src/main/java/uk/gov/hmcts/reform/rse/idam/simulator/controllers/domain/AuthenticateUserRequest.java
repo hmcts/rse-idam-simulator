@@ -1,7 +1,13 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
+@EqualsAndHashCode
+@Builder
+@Getter
 public class AuthenticateUserRequest {
     @JsonProperty("response_type")
     private final String responseType;
@@ -16,15 +22,4 @@ public class AuthenticateUserRequest {
         this.redirectUri = redirectUri;
     }
 
-    public String getResponseType() {
-        return responseType;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getRedirectUri() {
-        return redirectUri;
-    }
 }

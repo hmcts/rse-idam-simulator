@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserRequest;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.ExchangeCodeRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
@@ -34,7 +34,6 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @SuppressWarnings("PMD.UseObjectForClearerAPI")
 @RestController
-@RequestMapping("/")
 public class IdamSimulatorController {
 
     private static final Logger LOG = LoggerFactory.getLogger(IdamSimulatorController.class);
@@ -45,7 +44,6 @@ public class IdamSimulatorController {
     @Value("${simulator.jwt.expiration}")
     private long expiration;
 
-    /*Maybe deprecated*/
     @PostMapping("/pin")
     public PinDetails postPin(@RequestBody GeneratePinRequest request,
                               @RequestHeader(AUTHORIZATION) String authorization) {
@@ -53,7 +51,6 @@ public class IdamSimulatorController {
         return createPinDetails();
     }
 
-    /*Maybe deprecated*/
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Object> getPin(@RequestHeader("pin") final String pin,
                                          @RequestParam("client_id") final String clientId,
@@ -71,32 +68,32 @@ public class IdamSimulatorController {
     */
     @Deprecated
     @PostMapping(value = "/oauth2/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Object> authoriseUser(@RequestHeader(AUTHORIZATION) String authorization,
-                                                AuthenticateUserRequest request) {
-        LOG.info("Request oauth2 authorise for {}", request.getClientId());
-        Map<String, Object> body = new ConcurrentHashMap<>();
-        body.put("code", "dummyValue");
-        HttpHeaders httpHeaders = new HttpHeaders();
-        return new ResponseEntity<>(body, httpHeaders, HttpStatus.OK);
+    public AuthenticateUserResponse authoriseUser(@RequestHeader(AUTHORIZATION) String authorization,
+                                                  AuthenticateUserRequest request) {
+        LOG.warn("oauth2/authorize endpoint is deprecated!");
+        LOG.info("Request oauth2 authorise for clientId {}", request.getClientId());
+        return SimulatorDataFactory.OAUTH2_USER_PASSWORD_RESPONSE;
     }
 
-    /*Maybe deprecated*/
+    @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<Object> oauth2Token(ExchangeCodeRequest request) {
+        LOG.info("Request oauth2 token for code {} and grantType {}", request.getCode(), request.getGrantType());
+        ResponseEntity<Object> tokenExchangeResponse = createTokenExchangeResponse();
+        LOG.info("Oauth2 Token Generated {}", tokenExchangeResponse.getBody());
+        return tokenExchangeResponse;
+    }
+
     @GetMapping("/details")
     public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
         return createUserDetails("NotSureProbablyExtractFromHeader");
     }
 
-
-    @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Object> oauth2Token(@RequestHeader("my-number") int myNumber, ExchangeCodeRequest request) {
-        LOG.info("Request oauth2 token  for {} {}", myNumber, request.getClientId());
-        return createTokenExchangeResponse();
-    }
-
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse getOpenIdToken(TokenRequest request) {
         LOG.info("Request OpenId Token for {}", request.getUsername());
-        return createToken();
+        TokenResponse token = createToken();
+        LOG.info("Access Open Id Token Generated {}", token.accessToken);
+        return token;
     }
 
     @GetMapping("/o/userinfo")
