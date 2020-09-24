@@ -1,4 +1,4 @@
-package uk.gov.hmcts.reform.rse.idam.simulator.token;
+package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 
 public class TokenGenerationException extends RuntimeException {
 

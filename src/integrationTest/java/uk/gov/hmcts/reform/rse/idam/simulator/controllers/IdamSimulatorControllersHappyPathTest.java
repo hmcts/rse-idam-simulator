@@ -2,11 +2,17 @@ package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,6 +29,10 @@ public class IdamSimulatorControllersHappyPathTest {
     public static final String SMITH = "Smith";
     public static final String ROLE_1 = "role1";
     public static final String ROLE_2 = "role2";
+
+    @MockBean
+    private LiveMemoryService liveMemoryService;
+
     @Autowired
     private transient MockMvc mockMvc;
 
@@ -94,6 +104,9 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
+
+        verify(liveMemoryService, times(1))
+            .putSimObject(Mockito.anyString(), Mockito.any(SimObject.class));
     }
 
     @DisplayName("Should return an open id token")
@@ -115,6 +128,9 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.token_type").value("Bearer"))
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
+
+        verify(liveMemoryService, times(1))
+            .putSimObject(Mockito.anyString(), Mockito.any(SimObject.class));
     }
 
     @DisplayName("Should return expected user info")
