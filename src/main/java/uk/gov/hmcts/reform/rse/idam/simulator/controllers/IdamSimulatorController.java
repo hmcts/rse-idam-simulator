@@ -15,21 +15,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
-import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.ExchangeCodeRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenExchangeResponse;
-import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +39,8 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class IdamSimulatorController {
 
     private static final Logger LOG = LoggerFactory.getLogger(IdamSimulatorController.class);
+    public static final String CLIENT_ID = "client_id";
+    public static final String REDIRECT_URI = "redirect_uri";
 
     @Autowired
     private LiveMemoryService liveMemoryService;
@@ -51,6 +51,56 @@ public class IdamSimulatorController {
     @Value("${simulator.jwt.expiration}")
     private long expiration;
 
+    /*
+    This method is no longer acceptable as idam now uses OpenID Connect and /oauth2/authorize endpoint is deprecated.
+    */
+    @Deprecated
+    @PostMapping(value = "/oauth2/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public AuthenticateUserResponse authoriseUser(@RequestHeader(AUTHORIZATION) String authorization,
+                                                  @RequestParam(CLIENT_ID) final String clientId,
+                                                  @RequestParam(REDIRECT_URI) final String redirectUri,
+                                                  @RequestParam("response_type") final String responseType
+    ) {
+        LOG.warn("oauth2/authorize endpoint is deprecated!");
+        LOG.info("Request oauth2 authorise for clientId {}", clientId);
+        return SimulatorDataFactory.OAUTH2_USER_PASSWORD_RESPONSE;
+    }
+
+    @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public TokenExchangeResponse oauth2Token(@RequestParam(CLIENT_ID) final String clientId,
+                                             @RequestParam(REDIRECT_URI) final String redirectUri,
+                                             @RequestParam("client_secret") final String clientSecret,
+                                             @RequestParam("grant_type") final String grantType,
+                                             @RequestParam("code") final String code) {
+        LOG.info("Request oauth2 token for code {} and clientId {}", code, clientId);
+        TokenExchangeResponse tokenExchangeResponse = createTokenExchangeResponse();
+        LOG.info("Oauth2 Token Generated {}", tokenExchangeResponse.accessToken);
+        liveMemoryService.putSimObject(
+            tokenExchangeResponse.accessToken, SimObject.builder().clientId(clientId).build());
+        return tokenExchangeResponse;
+    }
+
+    @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
+                                        @RequestParam(REDIRECT_URI) final String redirectUri,
+                                        @RequestParam("client_secret") final String clientSecret,
+                                        @RequestParam("grant_type") final String grantType,
+                                        @RequestParam("username") final String username,
+                                        @RequestParam("password") final String password,
+                                        @RequestParam("scope") final String scope) {
+        LOG.info("Request OpenId Token for clientId {} Username {} and scope {}", clientId, username, scope);
+        TokenResponse token = createToken();
+        LOG.info("Access Open Id Token Generated {}", token.accessToken);
+        liveMemoryService.putSimObject(
+            token.accessToken,
+            SimObject.builder()
+                .clientId(clientId)
+                .username(username)
+                .build()
+        );
+        return token;
+    }
+
     @PostMapping("/pin")
     public PinDetails postPin(@RequestBody GeneratePinRequest request,
                               @RequestHeader(AUTHORIZATION) String authorization) {
@@ -60,47 +110,14 @@ public class IdamSimulatorController {
 
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Object> getPin(@RequestHeader("pin") final String pin,
-                                         @RequestParam("client_id") final String clientId,
-                                         @RequestParam("redirect_uri") final String redirectUri,
+                                         @RequestParam(CLIENT_ID) final String clientId,
+                                         @RequestParam(REDIRECT_URI) final String redirectUri,
                                          @RequestParam("state") final String state) {
         LOG.info("Get Pin for pin {}", pin);
         Map<String, Object> body = new ConcurrentHashMap<>();
         body.put("code", "dummyValue");
         HttpHeaders httpHeaders = new HttpHeaders();
         return new ResponseEntity<>(body, httpHeaders, HttpStatus.OK);
-    }
-
-    /*
-    This method is no longer acceptable as idam now uses OpenID Connect and /oauth2/authorize endpoint is deprecated.
-    */
-    @Deprecated
-    @PostMapping(value = "/oauth2/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public AuthenticateUserResponse authoriseUser(@RequestHeader(AUTHORIZATION) String authorization,
-                                                  AuthenticateUserRequest request) {
-        LOG.warn("oauth2/authorize endpoint is deprecated!");
-        LOG.info("Request oauth2 authorise for clientId {}", request.getClientId());
-        return SimulatorDataFactory.OAUTH2_USER_PASSWORD_RESPONSE;
-    }
-
-    @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public TokenExchangeResponse oauth2Token(ExchangeCodeRequest request) {
-        LOG.info("Request oauth2 token for code {} and grantType {}", request.getCode(), request.getGrantType());
-        TokenExchangeResponse tokenExchangeResponse = createTokenExchangeResponse();
-        LOG.info("Oauth2 Token Generated {}", tokenExchangeResponse.accessToken);
-        SimObject.builder().clientId(request.getClientId()).build();
-        liveMemoryService.putSimObject(
-            tokenExchangeResponse.accessToken, SimObject.builder().clientId(request.getClientId()).build());
-        return tokenExchangeResponse;
-    }
-
-    @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public TokenResponse getOpenIdToken(TokenRequest request) {
-        LOG.info("Request OpenId Token for {}", request.getUsername());
-        TokenResponse token = createToken();
-        LOG.info("Access Open Id Token Generated {}", token.accessToken);
-        liveMemoryService.putSimObject(
-            token.accessToken, SimObject.builder().clientId(request.getClientId()).build());
-        return token;
     }
 
     @GetMapping("/details")
@@ -130,7 +147,7 @@ public class IdamSimulatorController {
     }
 
     private List<IdamUserDetails> createUserDetailsList() {
-        return Arrays.asList(createUserDetails("oneUUIDValue"));
+        return Collections.singletonList(createUserDetails("oneUUIDValue"));
     }
 
     private IdamUserDetails createUserDetails(String userId) {
