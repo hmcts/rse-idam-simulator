@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,9 +22,12 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequ
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenExchangeResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
-import uk.gov.hmcts.reform.rse.idam.simulator.token.JwTokenGenerator;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +41,9 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class IdamSimulatorController {
 
     private static final Logger LOG = LoggerFactory.getLogger(IdamSimulatorController.class);
+
+    @Autowired
+    private LiveMemoryService liveMemoryService;
 
     @Value("${simulator.jwt.issuer}")
     private String issuer;
@@ -76,16 +83,14 @@ public class IdamSimulatorController {
     }
 
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Object> oauth2Token(ExchangeCodeRequest request) {
+    public TokenExchangeResponse oauth2Token(ExchangeCodeRequest request) {
         LOG.info("Request oauth2 token for code {} and grantType {}", request.getCode(), request.getGrantType());
-        ResponseEntity<Object> tokenExchangeResponse = createTokenExchangeResponse();
-        LOG.info("Oauth2 Token Generated {}", tokenExchangeResponse.getBody());
+        TokenExchangeResponse tokenExchangeResponse = createTokenExchangeResponse();
+        LOG.info("Oauth2 Token Generated {}", tokenExchangeResponse.accessToken);
+        SimObject.builder().clientId(request.getClientId()).build();
+        liveMemoryService.putSimObject(
+            tokenExchangeResponse.accessToken, SimObject.builder().clientId(request.getClientId()).build());
         return tokenExchangeResponse;
-    }
-
-    @GetMapping("/details")
-    public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
-        return createUserDetails("NotSureProbablyExtractFromHeader");
     }
 
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -94,6 +99,11 @@ public class IdamSimulatorController {
         TokenResponse token = createToken();
         LOG.info("Access Open Id Token Generated {}", token.accessToken);
         return token;
+    }
+
+    @GetMapping("/details")
+    public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
+        return createUserDetails("NotSureProbablyExtractFromHeader");
     }
 
     @GetMapping("/o/userinfo")
@@ -153,12 +163,9 @@ public class IdamSimulatorController {
         );
     }
 
-    private ResponseEntity<Object> createTokenExchangeResponse() {
-        Map<String, Object> body = new ConcurrentHashMap<>();
+    private TokenExchangeResponse createTokenExchangeResponse() {
         String token = JwTokenGenerator.generateToken(issuer, expiration);
-        body.put("access_token", token);
-        HttpHeaders httpHeaders = new HttpHeaders();
-        return new ResponseEntity<>(body, httpHeaders, HttpStatus.OK);
+        return new TokenExchangeResponse(token);
     }
 
     private PinDetails createPinDetails() {
