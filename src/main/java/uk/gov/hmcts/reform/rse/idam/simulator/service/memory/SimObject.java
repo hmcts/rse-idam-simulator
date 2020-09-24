@@ -10,4 +10,5 @@ import lombok.Getter;
 public class SimObject {
 
     private String clientId;
+    private String username;
 }
