@@ -98,6 +98,8 @@ public class IdamSimulatorController {
         LOG.info("Request OpenId Token for {}", request.getUsername());
         TokenResponse token = createToken();
         LOG.info("Access Open Id Token Generated {}", token.accessToken);
+        liveMemoryService.putSimObject(
+            token.accessToken, SimObject.builder().clientId(request.getClientId()).build());
         return token;
     }
 

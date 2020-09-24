@@ -128,6 +128,9 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.token_type").value("Bearer"))
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
+
+        verify(liveMemoryService, times(1))
+            .putSimObject(Mockito.anyString(), Mockito.any(SimObject.class));
     }
 
     @DisplayName("Should return expected user info")
