@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException.Unauthorized;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
@@ -63,7 +65,17 @@ public class IdamSimulatorController {
     ) {
         LOG.warn("oauth2/authorize endpoint is deprecated!");
         LOG.info("Request oauth2 authorise for clientId {}", clientId);
+        checkUserAuthenticatedByAuthBasic(authorization);
         return SimulatorDataFactory.OAUTH2_USER_PASSWORD_RESPONSE;
+    }
+
+    private void checkUserAuthenticatedByAuthBasic(String authorization) {
+        if (!authorization.startsWith("Basic")) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Basic Auth Token required");
+    }
+
+    private void checkUserHasBeenAuthenticateByBearerToken(String authorization) throws Unauthorized {
+        if (liveMemoryService.getSimObject(authorization) == null )
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
     }
 
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)

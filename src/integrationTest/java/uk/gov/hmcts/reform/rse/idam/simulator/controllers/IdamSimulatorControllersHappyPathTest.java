@@ -23,7 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class IdamSimulatorControllersHappyPathTest {
 
     public static final String AUTHORIZATION = "authorization";
-    public static final String BEARER_FOO = "bearer foo";
+    public static final String BEARER_FOO = "Bearer foo";
+    public static final String BASIC_FOO = "Basic foo";
     public static final String TEST_EMAIL_HMCTS_NET = "test-email@hmcts.net";
     public static final String JOHN = "John";
     public static final String SMITH = "Smith";
@@ -38,7 +39,7 @@ public class IdamSimulatorControllersHappyPathTest {
 
     @DisplayName("Should generate a pin code")
     @Test
-    public void generatePinCode() throws Exception {
+    public void returnPinToken() throws Exception {
         mockMvc.perform(post("/pin")
                             .header(AUTHORIZATION, BEARER_FOO)
                             .content(
@@ -64,18 +65,21 @@ public class IdamSimulatorControllersHappyPathTest {
             .andReturn();
     }
 
-    @DisplayName("Should return an oauth 2 token")
+    @DisplayName("Legacy endpoint that Should return an oauth 2 token")
     @Test
-    public void returnPinToken() throws Exception {
-        mockMvc.perform(post("/pin")
-                            .content(
-                                "{ \"firstName\": \"Jane\", \"lastName\": \"Doe\", \"roles\":[\"role1\",\"role2\"] }")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .header(AUTHORIZATION, BEARER_FOO))
+    public void legacyEndpointOauth2Token() throws Exception {
+        mockMvc.perform(post("/oauth2/authorize")
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                            .header(AUTHORIZATION, BASIC_FOO)
+                            .param("redirect_uri", "aRedirectUrl")
+                            .param("client_id", "aClientIdValue")
+                            .param("response_type", "code"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.pin").value("1234"))
-            .andExpect(jsonPath("$.userId").value("NotSureProbablyExtractFromHeader"))
+            .andExpect(jsonPath("$.code").isString())
             .andReturn();
+
+        verify(liveMemoryService, times(0))
+            .putSimObject(Mockito.anyString(), Mockito.any(SimObject.class));
     }
 
     @DisplayName("Should return an user details")

@@ -10,6 +10,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.gov.hmcts.reform.idam.client.IdamApi;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
+import uk.gov.hmcts.reform.idam.client.models.UserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 
 import static org.junit.Assert.assertTrue;
@@ -51,9 +52,20 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void openIdGetAccessToken() {
-        String accessToken = idamClient.getAccessToken("oneUserName", "onePassword");
+        String accessToken = fetchAccessToken();
 
         assertTrue("Bearer token not correct", accessToken.startsWith("Bearer "));
         assertTrue("Bearer token is too short", accessToken.length() > 575);
     }
+
+    private String fetchAccessToken() {
+        return idamClient.getAccessToken("oneUserName", "onePassword");
+    }
+
+    @Test
+    public void accessTokenIsNotValid() {
+        UserDetails userDetails = idamClient.getUserDetails("Bearer something wrong");
+    }
+
+
 }
