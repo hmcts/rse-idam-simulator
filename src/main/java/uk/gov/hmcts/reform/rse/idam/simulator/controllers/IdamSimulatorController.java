@@ -243,7 +243,9 @@ public class IdamSimulatorController {
 
     @PostMapping("/simulator/user")
     public IdamUserAddReponse addNewUser(@RequestBody IdamUserInfo request) {
-        LOG.info("Add new user in simulator for {} {} {}", request.getEmail(), request.getFamilyName(), request.getUid());
+        LOG.info("Add new user in simulator for {} {} {}",
+                 request.getEmail(), request.getFamilyName(), request.getUid()
+        );
         if (request.getUid() == null) {
             request.setUid(UUID.randomUUID().toString());
             LOG.info("UUID generated in simulator for new user {} {}", request.getEmail(), request.getUid());
