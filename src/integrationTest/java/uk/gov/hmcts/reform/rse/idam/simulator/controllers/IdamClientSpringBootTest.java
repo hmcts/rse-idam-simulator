@@ -21,6 +21,7 @@ import uk.gov.hmcts.reform.idam.client.models.GeneratePinRequest;
 import uk.gov.hmcts.reform.idam.client.models.UserDetails;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 
 import java.util.Arrays;
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     "PMD.JUnitTestsShouldIncludeAssert"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
-    LiveMemoryService.class},
+    LiveMemoryService.class, SimulatorService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yml")
 @EnableAutoConfiguration
@@ -49,6 +50,9 @@ public class IdamClientSpringBootTest {
 
     @LocalServerPort
     int localServerPort;
+
+    @Autowired
+    SimulatorService simulatorService;
 
     @Autowired
     LiveMemoryService liveMemoryService;

@@ -13,7 +13,6 @@ public class LiveMemoryService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LiveMemoryService.class);
 
-    public static final String BEARER_ = "Bearer ";
     private final Map<String, SimObject> memories = new ConcurrentHashMap<>();
 
     public Optional<SimObject> getByEmail(String email) {

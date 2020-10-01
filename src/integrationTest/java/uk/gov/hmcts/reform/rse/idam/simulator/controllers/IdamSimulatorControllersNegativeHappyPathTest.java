@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,6 +21,9 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     public static final String AUTHORIZATION = "authorization";
 
     @MockBean
+    private SimulatorService simulatorService;
+
+    @MockBean
     private LiveMemoryService liveMemoryService;
 
     @Autowired
@@ -28,6 +32,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     @DisplayName("Legacy endpoint that should accept only Basic Auth")
     @Test
     public void legacyEndpointOauth2Token() throws Exception {
+        assertNotNull(simulatorService);
         assertNotNull(liveMemoryService);
         mockMvc.perform(post("/oauth2/authorize")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
