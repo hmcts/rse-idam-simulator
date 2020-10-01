@@ -74,7 +74,6 @@ public class IdamSimulatorController {
         String username = new String(decoded).split(":")[0];
 
         String newCode = simulatorService.generateOauth2Code(username);
-        LOG.info("Request oauth2 new code generated {}", newCode);
         return new AuthenticateUserResponse(newCode);
     }
 
@@ -115,7 +114,7 @@ public class IdamSimulatorController {
     public PinDetails postPin(@RequestBody GeneratePinRequest request,
                               @RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
-        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         String userId = liveMemoryService.getByBearerToken(authorization).get().getId();
         return createPinDetails(userId);
     }
@@ -134,14 +133,14 @@ public class IdamSimulatorController {
 
     @GetMapping("/details")
     public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
-        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
         return toUserDetails(simObject);
     }
 
     @GetMapping("/o/userinfo")
     public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
-        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
         return toUserInfo(simObject);
     }
@@ -151,7 +150,7 @@ public class IdamSimulatorController {
         @RequestHeader(AUTHORIZATION) String authorization,
         @PathVariable("userId") String userId) {
         LOG.info("Request User Details {}", userId);
-        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = liveMemoryService.getByUserId(userId);
         return toUserDetails(simObject);
     }
@@ -161,7 +160,7 @@ public class IdamSimulatorController {
         @RequestHeader(AUTHORIZATION) String authorization,
         @RequestParam("query") final String elasticSearchQuery) {
         LOG.info("Request Search user details with query {}", elasticSearchQuery);
-        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         return createUserDetailsList();
     }
 
@@ -204,16 +203,10 @@ public class IdamSimulatorController {
         }
     }
 
-    private void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
-        if (!authorization.startsWith("Bearer")) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
-        }
-        if (liveMemoryService.getByBearerToken(authorization).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
-        }
-    }
-
-
+    /**
+     *
+     * This endpoint is not part of Idam an must use only to add user to the simulator
+     * */
     @PostMapping("/simulator/user")
     public IdamUserAddReponse addNewUser(@RequestBody IdamUserInfo request) {
         LOG.info("Add new user in simulator for {} {} {}",

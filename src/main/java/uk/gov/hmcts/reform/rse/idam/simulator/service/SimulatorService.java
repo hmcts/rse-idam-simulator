@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
@@ -18,6 +17,7 @@ import java.util.Optional;
 public class SimulatorService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulatorService.class);
+    public static final String BEARER_ = "Bearer ";
 
     @Autowired
     private LiveMemoryService liveMemoryService;
@@ -28,7 +28,7 @@ public class SimulatorService {
     @Value("${simulator.jwt.expiration}")
     private long expiration;
 
-    public String generateAuthTokenFromCode(@RequestParam("code") String code) {
+    public String generateAuthTokenFromCode(String code) {
         String token = JwTokenGenerator.generateToken(issuer, expiration);
         LOG.info("Oauth2 Token Generated {}", token);
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
@@ -42,9 +42,9 @@ public class SimulatorService {
         return JwTokenGenerator.generateToken(issuer, expiration);
     }
 
-    public void updateTokenInUser(@RequestParam("username") String username, String token) {
+    public void updateTokenInUser(String username, String token) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
-        userInMemory.get().setMostRecentBearerToken("Bearer " + token);
+        userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
     }
 
     public Optional<SimObject> checkUserInMemoryNotEmpty(String username) {
@@ -63,6 +63,16 @@ public class SimulatorService {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
         String newCode = Long.toString(System.currentTimeMillis());
         userInMemory.get().setMostRecentCode(newCode);
+        LOG.info("Oauth2 new code generated {}", newCode);
         return newCode;
+    }
+
+    public  void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
+        if (!authorization.startsWith(BEARER_)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
+        }
+        if (liveMemoryService.getByBearerToken(authorization).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
+        }
     }
 }
