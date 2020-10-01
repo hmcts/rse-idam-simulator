@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException.Unauthorized;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
@@ -40,7 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.gov.hmcts.reform.rse.idam.simulator.controllers.SimulatorDataFactory.getUserOne;
 
-@SuppressWarnings("PMD.UseObjectForClearerAPI")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessiveImports",
+    "PMD.UseObjectForClearerAPI"})
 @RestController
 public class IdamSimulatorController {
 
@@ -232,7 +232,7 @@ public class IdamSimulatorController {
         }
     }
 
-    private void checkUserHasBeenAuthenticateByBearerToken(String authorization) throws Unauthorized {
+    private void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
         if (!authorization.startsWith("Bearer")) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
         }

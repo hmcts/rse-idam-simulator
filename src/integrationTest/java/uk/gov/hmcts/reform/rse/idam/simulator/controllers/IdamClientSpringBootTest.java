@@ -3,18 +3,17 @@ package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.reform.idam.client.IdamApi;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
@@ -33,27 +32,29 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.JUnitAssertionsShouldIncludeMessage",
+    "PMD.JUnitTestsShouldIncludeAssert"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
-     LiveMemoryService.class},
+    LiveMemoryService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yml")
 @EnableAutoConfiguration
-@ExtendWith(SpringExtension.class)
+@RunWith(SpringRunner.class)
 public class IdamClientSpringBootTest {
 
+    public static final String MYEMAIL_HMCTSTEST_NET = "myemail@hmctstest.net";
+    public static final String THE_KID = "The Kid";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @LocalServerPort
     int localServerPort;
 
     @Autowired
-    private LiveMemoryService liveMemoryService;
+    LiveMemoryService liveMemoryService;
 
     @Autowired
     IdamClient idamClient;
-
-    private String workingAccessToken;
 
     /*
     Idam Methods to test
@@ -70,18 +71,18 @@ public class IdamClientSpringBootTest {
             .getAccessToken()// Done
     * */
 
-    @BeforeEach
-    public void setup() {
-        String userName = "myemail@hmctstest.net";
-        addUserToSimulator("Billy", "The Kid", userName);
+    @Before
+    public void setUp() {
+        String userName = MYEMAIL_HMCTSTEST_NET;
+        addUserToSimulator("Billy", THE_KID, userName);
         fetchAccessToken(userName);
+        assertNotNull(liveMemoryService);
     }
-
 
     @Test
     public void oauth2authenticateUserTest() throws Exception {
 
-        String userName = "myemail@hmctstest.net";
+        String userName = MYEMAIL_HMCTSTEST_NET;
 
         String deprecatedToken = idamClient.authenticateUser(userName, "somePassword");
 
@@ -91,7 +92,7 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void openIdGetAccessTokenTest() {
-        String userName = "myemail@hmctstest.net";
+        String userName = MYEMAIL_HMCTSTEST_NET;
 
         String accessToken = fetchAccessToken(userName);
 
@@ -102,7 +103,7 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void canSearchUserTest() {
-        String userName = "myemail@hmctstest.net";
+        String userName = MYEMAIL_HMCTSTEST_NET;
 
         String accessToken = fetchAccessToken(userName);
 
@@ -114,38 +115,38 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserInfoTest() {
-        String userName = "myemail@hmctstest.net";
+        String userName = MYEMAIL_HMCTSTEST_NET;
 
         String accessToken = fetchAccessToken(userName);
 
         UserInfo userInfo = idamClient.getUserInfo(accessToken);
 
         assertNotNull(userInfo);
-        assertEquals("The Kid", userInfo.getFamilyName());
+        assertEquals(THE_KID, userInfo.getFamilyName());
     }
 
     @Test
     public void fetchUserDetailsTest() {
-        String userName = "myemail@hmctstest.net";
+        String userName = MYEMAIL_HMCTSTEST_NET;
 
         String accessToken = fetchAccessToken(userName);
 
         UserDetails userDetails = idamClient.getUserDetails(accessToken);
 
-        assertEquals(Optional.of("The Kid"), userDetails.getSurname());
+        assertEquals(Optional.of(THE_KID), userDetails.getSurname());
     }
 
     @Test
     public void fetchUserByUserId() {
-        String userName = "myemail@hmctstest.net";
-        IdamUserInfo idamUserInfo = addUserToSimulator("Billy", "The Kid", userName);
+        String userName = MYEMAIL_HMCTSTEST_NET;
+        IdamUserInfo idamUserInfo = addUserToSimulator("Billy", THE_KID, userName);
         String accessToken = fetchAccessToken(userName);
 
         UserDetails userDetails = idamClient.getUserByUserId(accessToken, idamUserInfo.getUid());
 
-        assertEquals(Optional.of("The Kid"), userDetails.getSurname());
+        assertEquals(Optional.of(THE_KID), userDetails.getSurname());
         assertEquals("Billy", userDetails.getForename());
-        assertEquals("myemail@hmctstest.net", userDetails.getEmail());
+        assertEquals(MYEMAIL_HMCTSTEST_NET, userDetails.getEmail());
         assertNotNull(userDetails.getId(), idamUserInfo.getUid());
     }
 
@@ -178,7 +179,7 @@ public class IdamClientSpringBootTest {
 
     private void expect401Error(Executable apiCall) {
         FeignException exception = assertThrows(FeignException.class, apiCall);
-        assertEquals(exception.status(), HttpStatus.UNAUTHORIZED.value());
+        assertEquals(exception.status(), 401);
     }
 
     private IdamUserInfo addUserToSimulator(String forename, String surename, String email) {

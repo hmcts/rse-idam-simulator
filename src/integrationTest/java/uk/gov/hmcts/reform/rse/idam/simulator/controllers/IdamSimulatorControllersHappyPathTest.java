@@ -41,9 +41,11 @@ public class IdamSimulatorControllersHappyPathTest {
     public static final String ROLE_1 = "role1";
     public static final String ROLE_2 = "role2";
     public static final String ONE_USER_ID = "oneUserId";
+    public static final String CLIENT_ID = "client_id";
+    public static final String REDIRECT_URI = "redirect_uri";
 
     @MockBean
-    private LiveMemoryService liveMemoryService;
+    LiveMemoryService liveMemoryService;
 
     @Autowired
     private transient MockMvc mockMvc;
@@ -69,8 +71,8 @@ public class IdamSimulatorControllersHappyPathTest {
         mockMvc.perform(get("/pin")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                             .header("pin", "pinHeaderValue")
-                            .param("client_id", "aClientId")
-                            .param("redirect_uri", "aRedirectUri")
+                            .param(CLIENT_ID, "aClientId")
+                            .param(REDIRECT_URI, "aRedirectUri")
                             .param("state", "oneState"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value("dummyValue"))
@@ -85,8 +87,8 @@ public class IdamSimulatorControllersHappyPathTest {
         mockMvc.perform(post("/oauth2/authorize")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                             .header(AUTHORIZATION, BASIC_FOO)
-                            .param("redirect_uri", "aRedirectUrl")
-                            .param("client_id", "aClientIdValue")
+                            .param(REDIRECT_URI, "aRedirectUrl")
+                            .param(CLIENT_ID, "aClientIdValue")
                             .param("response_type", "code"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").isString())
@@ -120,8 +122,8 @@ public class IdamSimulatorControllersHappyPathTest {
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                             .param("grant_type", "client_credential")
-                            .param("redirect_uri", "aRedirectUrl")
-                            .param("client_id", "aClientIdValue")
+                            .param(REDIRECT_URI, "aRedirectUrl")
+                            .param(CLIENT_ID, "aClientIdValue")
                             .param("code", "1234")
                             .param("client_secret", "oneSecret"))
             .andExpect(status().isOk())
@@ -139,10 +141,10 @@ public class IdamSimulatorControllersHappyPathTest {
 
         mockMvc.perform(post("/o/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                            .param("client_id", "oneClientId")
+                            .param(CLIENT_ID, "oneClientId")
                             .param("client_secret", "oneClientSecret")
                             .param("grant_type", "grantable")
-                            .param("redirect_uri", "aRedirectUrl")
+                            .param(REDIRECT_URI, "aRedirectUrl")
                             .param("username", "aUserName")
                             .param("password", "somePassword")
                             .param("scope", "aScope"))
