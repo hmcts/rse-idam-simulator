@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserAddReponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
@@ -26,15 +28,19 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
 
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static uk.gov.hmcts.reform.rse.idam.simulator.controllers.SimulatorDataFactory.getUserOne;
 
-@SuppressWarnings("PMD.UseObjectForClearerAPI")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessiveImports",
+    "PMD.UseObjectForClearerAPI"})
 @RestController
 public class IdamSimulatorController {
 
@@ -63,7 +69,27 @@ public class IdamSimulatorController {
     ) {
         LOG.warn("oauth2/authorize endpoint is deprecated!");
         LOG.info("Request oauth2 authorise for clientId {}", clientId);
-        return SimulatorDataFactory.OAUTH2_USER_PASSWORD_RESPONSE;
+        checkUserAuthenticatedByAuthBasic(authorization);
+
+        byte[] decoded = Base64.getDecoder().decode(authorization.replace("Basic ", ""));
+        String username = new String(decoded).split(":")[0];
+
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
+        String newCode = Long.toString(System.currentTimeMillis());
+        userInMemory.get().setMostRecentCode(newCode);
+        LOG.info("Request oauth2 new code generated {}", newCode);
+        return new AuthenticateUserResponse(newCode);
+    }
+
+    private Optional<SimObject> checkUserInMemoryNotEmpty(String username) {
+        Optional<SimObject> userInMemory = liveMemoryService.getByEmail(username);
+        if (userInMemory.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Idam Simulator: User " + username + " not exiting"
+            );
+        }
+        return userInMemory;
     }
 
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -75,8 +101,10 @@ public class IdamSimulatorController {
         LOG.info("Request oauth2 token for code {} and clientId {}", code, clientId);
         TokenExchangeResponse tokenExchangeResponse = createTokenExchangeResponse();
         LOG.info("Oauth2 Token Generated {}", tokenExchangeResponse.accessToken);
-        liveMemoryService.putSimObject(
-            tokenExchangeResponse.accessToken, SimObject.builder().clientId(clientId).build());
+        Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
+        if (userInMemory.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: No User for this code " + code);
+        }
         return tokenExchangeResponse;
     }
 
@@ -91,13 +119,8 @@ public class IdamSimulatorController {
         LOG.info("Request OpenId Token for clientId {} Username {} and scope {}", clientId, username, scope);
         TokenResponse token = createToken();
         LOG.info("Access Open Id Token Generated {}", token.accessToken);
-        liveMemoryService.putSimObject(
-            token.accessToken,
-            SimObject.builder()
-                .clientId(clientId)
-                .username(username)
-                .build()
-        );
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
+        userInMemory.get().setMostRecentBearerToken("Bearer " + token.accessToken);
         return token;
     }
 
@@ -105,7 +128,9 @@ public class IdamSimulatorController {
     public PinDetails postPin(@RequestBody GeneratePinRequest request,
                               @RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
-        return createPinDetails();
+        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        String userId = liveMemoryService.getByBearerToken(authorization).get().getId();
+        return createPinDetails(userId);
     }
 
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -122,12 +147,16 @@ public class IdamSimulatorController {
 
     @GetMapping("/details")
     public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
-        return createUserDetails("NotSureProbablyExtractFromHeader");
+        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        return toUserDetails(simObject);
     }
 
     @GetMapping("/o/userinfo")
     public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
-        return createUserInfo("anUuidFromToken");
+        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        return toUserInfo(simObject);
     }
 
     @GetMapping("/api/v1/users/{userId}")
@@ -135,7 +164,9 @@ public class IdamSimulatorController {
         @RequestHeader(AUTHORIZATION) String authorization,
         @PathVariable("userId") String userId) {
         LOG.info("Request User Details {}", userId);
-        return createUserDetails(userId);
+        checkUserHasBeenAuthenticateByBearerToken(authorization);
+        SimObject simObject = liveMemoryService.getByUserId(userId);
+        return toUserDetails(simObject);
     }
 
     @GetMapping("/api/v1/users")
@@ -143,33 +174,34 @@ public class IdamSimulatorController {
         @RequestHeader(AUTHORIZATION) String authorization,
         @RequestParam("query") final String elasticSearchQuery) {
         LOG.info("Request Search user details with query {}", elasticSearchQuery);
+        checkUserHasBeenAuthenticateByBearerToken(authorization);
         return createUserDetailsList();
     }
 
-    private List<IdamUserDetails> createUserDetailsList() {
-        return Collections.singletonList(createUserDetails("oneUUIDValue"));
-    }
-
-    private IdamUserDetails createUserDetails(String userId) {
-        IdamUserDetails userDetails = new IdamUserDetails();
-        userDetails.setId(userId);
-        userDetails.setEmail("test-email@hmcts.net");
-        userDetails.setForename("John");
-        userDetails.setSurname("Smith");
-        userDetails.setRoles(Arrays.asList("role1", "role2"));
-        return userDetails;
-    }
-
-    private IdamUserInfo createUserInfo(String uuid) {
+    private IdamUserInfo toUserInfo(SimObject simObject) {
         IdamUserInfo idamUserInfo = new IdamUserInfo();
-        idamUserInfo.setEmail("test-email@hmcts.net");
-        idamUserInfo.setFamilyName("Smith");
-        idamUserInfo.setGivenName("John");
-        idamUserInfo.setName("Johnny");
-        idamUserInfo.setRoles(Arrays.asList("role1", "role2"));
-        idamUserInfo.setSub("sub99");
-        idamUserInfo.setUid(uuid);
+        idamUserInfo.setFamilyName(simObject.getSurname());
+        idamUserInfo.setGivenName(simObject.getForename());
+        idamUserInfo.setUid(simObject.getId());
+        idamUserInfo.setName(simObject.getForename() + " " + simObject.getSurname());
+        idamUserInfo.setEmail(simObject.getEmail());
+        idamUserInfo.setSub(simObject.getSub());
+        idamUserInfo.setRoles(simObject.getRoles());
         return idamUserInfo;
+    }
+
+    private IdamUserDetails toUserDetails(SimObject simObject) {
+        IdamUserDetails res = new IdamUserDetails();
+        res.setEmail(simObject.getEmail());
+        res.setForename(simObject.getForename());
+        res.setId(simObject.getId());
+        res.setSurname(simObject.getSurname());
+        res.setRoles(simObject.getRoles());
+        return res;
+    }
+
+    private List<IdamUserDetails> createUserDetailsList() {
+        return Collections.singletonList(getUserOne("oneUUIDValue"));
     }
 
     private TokenResponse createToken() {
@@ -187,11 +219,46 @@ public class IdamSimulatorController {
         return new TokenExchangeResponse(token);
     }
 
-    private PinDetails createPinDetails() {
+    private PinDetails createPinDetails(String userId) {
         PinDetails pin = new PinDetails();
         pin.setPin("1234");
-        pin.setUserId("NotSureProbablyExtractFromHeader");
+        pin.setUserId(userId);
         return pin;
     }
+
+    private void checkUserAuthenticatedByAuthBasic(String authorization) {
+        if (!authorization.startsWith("Basic")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Basic Auth Token required");
+        }
+    }
+
+    private void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
+        if (!authorization.startsWith("Bearer")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
+        }
+        if (liveMemoryService.getByBearerToken(authorization).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
+        }
+    }
+
+    @PostMapping("/simulator/user")
+    public IdamUserAddReponse addNewUser(@RequestBody IdamUserInfo request) {
+        LOG.info("Add new user in simulator for {} {} {}",
+                 request.getEmail(), request.getFamilyName(), request.getUid()
+        );
+        if (request.getUid() == null) {
+            request.setUid(UUID.randomUUID().toString());
+            LOG.info("UUID generated in simulator for new user {} {}", request.getEmail(), request.getUid());
+        }
+        liveMemoryService.putSimObject(request.getUid(), SimObject.builder()
+            .email(request.getEmail())
+            .surname(request.getFamilyName())
+            .forename(request.getGivenName())
+            .id(request.getUid())
+            .roles(request.getRoles())
+            .sub(request.getSub()).build());
+        return new IdamUserAddReponse(request.getUid());
+    }
+
 
 }

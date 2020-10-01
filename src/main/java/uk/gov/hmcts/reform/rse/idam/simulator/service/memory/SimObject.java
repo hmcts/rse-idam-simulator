@@ -4,11 +4,37 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.List;
+
 @EqualsAndHashCode
 @Builder
 @Getter
 public class SimObject {
 
     private String clientId;
-    private String username;
+    /**
+     * uid is id in Idam.
+     **/
+    private String id;
+    /**
+     * email is also the username in Idam.
+     **/
+    private String email;
+    /**
+     * name is usually Forename + Surname in Idam.
+     **/
+    private String forename;
+    private String surname;
+    private List<String> roles;
+    private String sub;
+    private String mostRecentBearerToken;
+    private String mostRecentCode;
+
+    public void setMostRecentBearerToken(String mostRecentBearerToken) {
+        this.mostRecentBearerToken = mostRecentBearerToken;
+    }
+
+    public void setMostRecentCode(String mostRecentCode) {
+        this.mostRecentCode = mostRecentCode;
+    }
 }
