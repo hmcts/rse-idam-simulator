@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 
@@ -28,12 +29,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class IdamSimulatorControllersHappyPathTest {
 
     public static final String AUTHORIZATION = "authorization";
-    public static final String BEARER_TOKEN = "Bearer eyJraWQiOiIyMzQ1Njc4OSIsImFsZyI6IlJTMjU2In0."
+    public static final String TOKEN = "Bearer eyJraWQiOiIyMzQ1Njc4OSIsImFsZyI6IlJTMjU2In0."
         + "eyJzdWIiOiJSU0UtSWRhbS1TaW11bGF0b3IiLCJpc3MiOiJodHRwOlwvXC9mci1hbTo4MDgwXC9vcGVuYW1cL29hdXRoMlwvaG1jdHMiL"
         + "CJ0b2tlbk5hbWUiOiJhY2Nlc3NfdG9rZW4iLCJleHAiOjE2MDEzOTIzMTQsImlhdCI6MTYwMTM3NzkxNH0.U-XyxFHq5daqQbbrnZQjV2V"
         + "qY7WVN3JA94WnwXF8tSCZSGb_GyfS0wu5DEtq-FPKzDbajuI2do-H6ElRM0Ko7Ch6qFFxvfF5riVVRHO3q0SjmkroP-faz_NqE3-UNrLTm0"
         + "zglYndemBw8h1hYVeJY95BZexXtO8SZOTKlUYnbfGSSL86WwPlk7wc3jH4CVbBI0hpaUvtoAfsvcZqqROUbQvJrIdsUirlMM6EkSnitfkcea"
         + "_H5qXC8nPOoMvhjocZBsJYVno4i8R7ildtHHZXCM_rz7dnU8XA2Mtj0o0DdoCbmAfYOuVEK7iZ1UQIwgZ8UUPEGk_N8t2gSxjM-cEtzg";
+    public static final String BEARER_TOKEN = "Bearer " + TOKEN;
     public static final String BASIC_FOO = "Basic foo";
     public static final String TEST_EMAIL_HMCTS_NET = "test-email@hmcts.net";
     public static final String JOHN = "John";
@@ -43,6 +45,9 @@ public class IdamSimulatorControllersHappyPathTest {
     public static final String ONE_USER_ID = "oneUserId";
     public static final String CLIENT_ID = "client_id";
     public static final String REDIRECT_URI = "redirect_uri";
+
+    @MockBean
+    SimulatorService simulatorService;
 
     @MockBean
     LiveMemoryService liveMemoryService;
@@ -83,6 +88,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @Test
     public void legacyEndpointOauth2Token() throws Exception {
         when(liveMemoryService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+        when(simulatorService.generateOauth2Code(anyString())).thenReturn("123456");
 
         mockMvc.perform(post("/oauth2/authorize")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -91,11 +97,14 @@ public class IdamSimulatorControllersHappyPathTest {
                             .param(CLIENT_ID, "aClientIdValue")
                             .param("response_type", "code"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").isString())
+            .andExpect(jsonPath("$.code").value("123456"))
             .andReturn();
 
         verify(liveMemoryService, times(0))
             .putSimObject(Mockito.anyString(), Mockito.any(SimObject.class));
+
+        verify(simulatorService, times(1))
+            .generateOauth2Code(Mockito.anyString());
     }
 
     @DisplayName("Should return an user details")
@@ -117,7 +126,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return an oauth 2 token")
     @Test
     public void returnOauth2Token() throws Exception {
-        when(liveMemoryService.getByCode(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+        when(simulatorService.generateAuthTokenFromCode(anyString())).thenReturn(TOKEN);
 
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -130,13 +139,14 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
 
-        verify(liveMemoryService, times(1))
-            .getByCode(Mockito.anyString());
+        verify(simulatorService, times(1))
+            .generateAuthTokenFromCode(Mockito.anyString());
     }
 
     @DisplayName("Should return an open id token")
     @Test
     public void returnOpenIdToken() throws Exception {
+        when(simulatorService.generateAToken()).thenReturn(TOKEN);
         when(liveMemoryService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
 
         mockMvc.perform(post("/o/token")
@@ -158,8 +168,10 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
 
-        verify(liveMemoryService, times(1))
-            .getByEmail(Mockito.anyString());
+        verify(simulatorService, times(3))
+            .generateAToken();
+        verify(simulatorService, times(1))
+            .updateTokenInUser("aUserName", TOKEN);
     }
 
     @DisplayName("Should return expected user info")
