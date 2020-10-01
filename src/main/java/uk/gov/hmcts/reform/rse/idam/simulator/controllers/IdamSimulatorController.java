@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.gov.hmcts.reform.rse.idam.simulator.controllers.SimulatorDataFactory.getUserOne;
 
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessiveImports",
+@SuppressWarnings({"PMD.ExcessiveImports",
     "PMD.UseObjectForClearerAPI"})
 @RestController
 public class IdamSimulatorController {
@@ -204,8 +204,7 @@ public class IdamSimulatorController {
     }
 
     /**
-     *
-     * This endpoint is not part of Idam an must use only to add user to the simulator
+     * This endpoint is not part of Idam an must use only to add user to the simulator.
      * */
     @PostMapping("/simulator/user")
     public IdamUserAddReponse addNewUser(@RequestBody IdamUserInfo request) {
