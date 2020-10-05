@@ -163,7 +163,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.expires_in").isString())
             .andExpect(jsonPath("$.id_token").isString())
             .andExpect(jsonPath("$.refresh_token").isString())
-            .andExpect(jsonPath("$.scope").value("openid profile roles search-user"))
+            .andExpect(jsonPath("$.scope").value("openid profile roles"))
             .andExpect(jsonPath("$.token_type").value("Bearer"))
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();

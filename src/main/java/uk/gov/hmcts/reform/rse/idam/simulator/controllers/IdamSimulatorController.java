@@ -106,7 +106,7 @@ public class IdamSimulatorController {
         LOG.info("Access Open Id Token Generated {}", token);
         simulatorService.updateTokenInUser(username, token);
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
-                                 "openid profile roles search-user", "Bearer"
+                                 "openid profile roles", "Bearer"
         );
     }
 
