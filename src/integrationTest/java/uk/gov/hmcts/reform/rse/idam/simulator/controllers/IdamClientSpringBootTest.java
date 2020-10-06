@@ -17,24 +17,40 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.reform.idam.client.IdamApi;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
+import uk.gov.hmcts.reform.idam.client.models.AuthenticateUserResponse;
+import uk.gov.hmcts.reform.idam.client.models.ExchangeCodeRequest;
 import uk.gov.hmcts.reform.idam.client.models.GeneratePinRequest;
+import uk.gov.hmcts.reform.idam.client.models.GeneratePinResponse;
+import uk.gov.hmcts.reform.idam.client.models.TokenExchangeResponse;
+import uk.gov.hmcts.reform.idam.client.models.TokenResponse;
 import uk.gov.hmcts.reform.idam.client.models.UserDetails;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/*
+ * In short we have 3 ways to have a Bearer Token, this is indirectly tested in this integration test.
+ * - Put o/token (username, password) --> Token
+ * - Post Oauth2/authorize (Authorization Header Basic) -->  code
+ * Post Oauth2/token (code) --> Token
+ * - Post pin (Authorization Header Basic) --> pin
+ * GET pin (pin) --> 301 with Header Location in form url?code=myvalue
+ * Post Oauth2/token (code) --> Token
+ */
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.JUnitAssertionsShouldIncludeMessage",
-    "PMD.JUnitTestsShouldIncludeAssert"})
+    "PMD.JUnitTestsShouldIncludeAssert", "PMD.LawOfDemeter", "PMD.ExcessiveImports"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
     LiveMemoryService.class, SimulatorService.class},
@@ -46,6 +62,10 @@ public class IdamClientSpringBootTest {
 
     public static final String MYEMAIL_HMCTSTEST_NET = "myemail@hmctstest.net";
     public static final String THE_KID = "The Kid";
+    public static final String BILLY = "Billy";
+    public static final int BEARER_SIZE = 400;
+    public static final int PIN_SIZE = 16;
+    public static final int CODE_SIZE = 17;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @LocalServerPort
@@ -60,57 +80,33 @@ public class IdamClientSpringBootTest {
     @Autowired
     IdamClient idamClient;
 
-    /*
-    Idam Methods to test
-            idamClient.
-            .searchUsers() // done
-            .getUserInfo() // done
-            .getUserDetails() //done
-            .getUserByUserId()
-            .getAccessTokenResponse()
-            .generatePin()
-            .exchangeCode()
-            .authenticatePinUser()
-            .authenticateUser()// Done
-            .getAccessToken()// Done
-    * */
+    String accessToken;
 
     @Before
     public void setUp() {
         String userName = MYEMAIL_HMCTSTEST_NET;
-        addUserToSimulator("Billy", THE_KID, userName);
-        fetchAccessToken(userName);
+        addUserToSimulator(BILLY, THE_KID, userName);
+        accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
         assertNotNull(liveMemoryService);
     }
 
     @Test
     public void oauth2authenticateUserTest() throws Exception {
 
-        String userName = MYEMAIL_HMCTSTEST_NET;
-
-        String deprecatedToken = idamClient.authenticateUser(userName, "somePassword");
+        String deprecatedToken = idamClient.authenticateUser(MYEMAIL_HMCTSTEST_NET, "somePassword");
 
         assertTrue(deprecatedToken.startsWith("Bearer "));
-        assertTrue(deprecatedToken.length() > 575);
+        assertTrue(deprecatedToken.length() >= BEARER_SIZE);
     }
 
     @Test
     public void openIdGetAccessTokenTest() {
-        String userName = MYEMAIL_HMCTSTEST_NET;
-
-        String accessToken = fetchAccessToken(userName);
-
         assertTrue(accessToken.startsWith("Bearer "));
-        assertTrue(accessToken.length() > 575);
+        assertTrue(accessToken.length() >= BEARER_SIZE);
     }
-
 
     @Test
     public void canSearchUserTest() {
-        String userName = MYEMAIL_HMCTSTEST_NET;
-
-        String accessToken = fetchAccessToken(userName);
-
         List<UserDetails> returnedUser = idamClient.searchUsers(accessToken, "return Smith");
 
         assertEquals(1, returnedUser.size());
@@ -119,10 +115,6 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserInfoTest() {
-        String userName = MYEMAIL_HMCTSTEST_NET;
-
-        String accessToken = fetchAccessToken(userName);
-
         UserInfo userInfo = idamClient.getUserInfo(accessToken);
 
         assertNotNull(userInfo);
@@ -131,10 +123,6 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserDetailsTest() {
-        String userName = MYEMAIL_HMCTSTEST_NET;
-
-        String accessToken = fetchAccessToken(userName);
-
         UserDetails userDetails = idamClient.getUserDetails(accessToken);
 
         assertEquals(Optional.of(THE_KID), userDetails.getSurname());
@@ -142,16 +130,84 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserByUserId() {
-        String userName = MYEMAIL_HMCTSTEST_NET;
-        IdamUserInfo idamUserInfo = addUserToSimulator("Billy", THE_KID, userName);
-        String accessToken = fetchAccessToken(userName);
+        IdamUserInfo idamUserInfo = addUserToSimulator(
+            "ForeName1",
+            "SureName1",
+            "AnotherEmail@hmcts.net"
+        );
 
         UserDetails userDetails = idamClient.getUserByUserId(accessToken, idamUserInfo.getUid());
 
-        assertEquals(Optional.of(THE_KID), userDetails.getSurname());
-        assertEquals("Billy", userDetails.getForename());
-        assertEquals(MYEMAIL_HMCTSTEST_NET, userDetails.getEmail());
+        assertEquals(Optional.of("SureName1"), userDetails.getSurname());
+        assertEquals("ForeName1", userDetails.getForename());
+        assertEquals("AnotherEmail@hmcts.net", userDetails.getEmail());
         assertNotNull(userDetails.getId(), idamUserInfo.getUid());
+    }
+
+    @Test
+    public void fetchAccessTokenByUserPassword() {
+        TokenResponse tokenResponse = idamClient.getAccessTokenResponse(
+            MYEMAIL_HMCTSTEST_NET,
+            "somePassword"
+        );
+        assertEquals(tokenResponse.expiresIn, "14400000");
+        assertEquals(tokenResponse.scope, "openid profile roles");
+        assertEquals(tokenResponse.tokenType, "Bearer");
+        assertNotNull(tokenResponse.accessToken);
+        assertTrue(tokenResponse.accessToken.length() >= BEARER_SIZE);
+    }
+
+    @Test
+    public void generatePinTest() {
+        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
+        // Not sure it should be an access token, it's probably more a Basic One.
+
+        assertNotNull(generatePinResponse.getPin());
+        assertSame(generatePinResponse.getPin().length(), PIN_SIZE);
+        assertNotNull(generatePinResponse.getUserId());
+    }
+
+    @Test
+    public void authPinUser() throws UnsupportedEncodingException {
+
+        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
+
+        AuthenticateUserResponse authUserResponse = idamClient.authenticatePinUser(
+            generatePinResponse.getPin(),
+            "someState"
+        );
+
+        assertNotNull(authUserResponse.getCode());
+        assertSame(authUserResponse.getCode().length(), CODE_SIZE);
+
+    }
+
+    @Test
+    public void exchangeCode() throws UnsupportedEncodingException {
+
+        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
+
+        AuthenticateUserResponse authenticateUserResponse = idamClient.authenticatePinUser(
+            generatePinResponse.getPin(),
+            "someState"
+        );
+
+        ExchangeCodeRequest exchangeRequest = new ExchangeCodeRequest(
+            authenticateUserResponse.getCode(),
+            "authorization_code",
+            "https://dummyStuff:3000/receiver",
+            "aClientID",
+            "aClientSecret"
+        );
+
+        TokenExchangeResponse tokenExchangeResponse = idamClient.exchangeCode(exchangeRequest);
+
+        assertNotNull(tokenExchangeResponse.getAccessToken());
+        assertTrue(tokenExchangeResponse.getAccessToken().length() >= BEARER_SIZE);
+
     }
 
     @Test
@@ -211,6 +267,5 @@ public class IdamClientSpringBootTest {
             throw new JsonTestException("impossible to extract uuid", jse);
         }
     }
-
 
 }

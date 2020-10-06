@@ -24,6 +24,7 @@ public class LiveMemoryService {
 
     public Optional<SimObject> getByBearerToken(String bearerToken) {
         return memories.entrySet().stream()
+            .filter(es -> es.getValue() != null && es.getValue().getMostRecentBearerToken() != null)
             .filter(es -> es.getValue().getMostRecentBearerToken().equalsIgnoreCase(bearerToken))
             .map(es -> es.getValue())
             .findFirst();
@@ -31,7 +32,16 @@ public class LiveMemoryService {
 
     public Optional<SimObject> getByCode(String code) {
         return memories.entrySet().stream()
+            .filter(es -> es.getValue() != null && es.getValue().getMostRecentCode() != null)
             .filter(es -> es.getValue().getMostRecentCode().equalsIgnoreCase(code))
+            .map(es -> es.getValue())
+            .findFirst();
+    }
+
+    public Optional<SimObject> getByPin(String pin) {
+        return memories.entrySet().stream()
+            .filter(es -> es.getValue() != null && es.getValue().getLastGeneratedPin() != null)
+            .filter(es -> es.getValue().getLastGeneratedPin().equalsIgnoreCase(pin))
             .map(es -> es.getValue())
             .findFirst();
     }

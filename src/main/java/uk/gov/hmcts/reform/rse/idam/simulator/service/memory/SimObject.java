@@ -29,6 +29,7 @@ public class SimObject {
     private String sub;
     private String mostRecentBearerToken;
     private String mostRecentCode;
+    private String lastGeneratedPin;
 
     public void setMostRecentBearerToken(String mostRecentBearerToken) {
         this.mostRecentBearerToken = mostRecentBearerToken;
@@ -36,5 +37,9 @@ public class SimObject {
 
     public void setMostRecentCode(String mostRecentCode) {
         this.mostRecentCode = mostRecentCode;
+    }
+
+    public void setLastGeneratedPin(String lastGeneratedPin) {
+        this.lastGeneratedPin = lastGeneratedPin;
     }
 }

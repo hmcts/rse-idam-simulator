@@ -8,12 +8,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -24,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
+@SuppressWarnings({"PMD.JUnitTestsShouldIncludeAssert", "PMD.JUnitAssertionsShouldIncludeMessage"})
 @WebMvcTest
 public class IdamSimulatorControllersHappyPathTest {
 
@@ -58,14 +61,18 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should generate a pin code")
     @Test
     public void returnPinToken() throws Exception {
-        when(liveMemoryService.getByBearerToken(any())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+        PinDetails pinDetails = new PinDetails();
+        pinDetails.setPin("eEdhNnasWy7eNFAV");
+        pinDetails.setUserId("oneUserId");
+        when(simulatorService.createPinDetails(any())).thenReturn(pinDetails);
+
         mockMvc.perform(post("/pin")
                             .header(AUTHORIZATION, BEARER_TOKEN)
                             .content(
                                 "{ \"firstName\": \"Jane\", \"lastName\": \"Doe\", \"roles\":[\"role1\",\"role2\"] }")
                             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.pin").value("1234"))
+            .andExpect(jsonPath("$.pin").value("eEdhNnasWy7eNFAV"))
             .andExpect(jsonPath("$.userId").value("oneUserId"))
             .andReturn();
     }
@@ -73,22 +80,22 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return a pin code")
     @Test
     public void returnPinCode() throws Exception {
-        mockMvc.perform(get("/pin")
-                            .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                            .header("pin", "pinHeaderValue")
-                            .param(CLIENT_ID, "aClientId")
-                            .param(REDIRECT_URI, "aRedirectUri")
-                            .param("state", "oneState"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value("dummyValue"))
+        MvcResult mvcResult = mockMvc.perform(get("/pin")
+                                                  .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                                                  .header("pin", "pinHeaderValue")
+                                                  .param(CLIENT_ID, "aClientId")
+                                                  .param(REDIRECT_URI, "aRedirectUri")
+                                                  .param("state", "oneState"))
+            .andExpect(status().isFound())
             .andReturn();
+        assertTrue(mvcResult.getResponse().getHeader("Location").contains("code"));
     }
 
     @DisplayName("Legacy endpoint that Should return an oauth 2 token")
     @Test
     public void legacyEndpointOauth2Token() throws Exception {
         when(liveMemoryService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
-        when(simulatorService.generateOauth2Code(anyString())).thenReturn("123456");
+        when(simulatorService.generateOauth2CodeFromUserName(anyString())).thenReturn("abcdefgh123456789");
 
         mockMvc.perform(post("/oauth2/authorize")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -97,14 +104,14 @@ public class IdamSimulatorControllersHappyPathTest {
                             .param(CLIENT_ID, "aClientIdValue")
                             .param("response_type", "code"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value("123456"))
+            .andExpect(jsonPath("$.code").value("abcdefgh123456789"))
             .andReturn();
 
         verify(liveMemoryService, times(0))
             .putSimObject(Mockito.anyString(), Mockito.any(SimObject.class));
 
         verify(simulatorService, times(1))
-            .generateOauth2Code(Mockito.anyString());
+            .generateOauth2CodeFromUserName(Mockito.anyString());
     }
 
     @DisplayName("Should return an user details")
@@ -163,7 +170,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.expires_in").isString())
             .andExpect(jsonPath("$.id_token").isString())
             .andExpect(jsonPath("$.refresh_token").isString())
-            .andExpect(jsonPath("$.scope").value("openid profile roles search-user"))
+            .andExpect(jsonPath("$.scope").value("openid profile roles"))
             .andExpect(jsonPath("$.token_type").value("Bearer"))
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
