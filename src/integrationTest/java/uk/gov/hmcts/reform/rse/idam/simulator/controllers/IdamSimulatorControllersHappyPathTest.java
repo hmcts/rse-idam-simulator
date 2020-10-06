@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
@@ -58,7 +59,11 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should generate a pin code")
     @Test
     public void returnPinToken() throws Exception {
-        when(liveMemoryService.getByBearerToken(any())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+        PinDetails pinDetails = new PinDetails();
+        pinDetails.setPin("1234");
+        pinDetails.setUserId("oneUserId");
+        when(simulatorService.createPinDetails(any())).thenReturn(pinDetails);
+
         mockMvc.perform(post("/pin")
                             .header(AUTHORIZATION, BEARER_TOKEN)
                             .content(

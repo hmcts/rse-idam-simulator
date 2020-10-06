@@ -115,8 +115,7 @@ public class IdamSimulatorController {
                               @RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        String userId = liveMemoryService.getByBearerToken(authorization).get().getId();
-        return createPinDetails(userId);
+        return simulatorService.createPinDetails(authorization);
     }
 
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -190,13 +189,6 @@ public class IdamSimulatorController {
         return Collections.singletonList(getUserOne("oneUUIDValue"));
     }
 
-    private PinDetails createPinDetails(String userId) {
-        PinDetails pin = new PinDetails();
-        pin.setPin("1234");
-        pin.setUserId(userId);
-        return pin;
-    }
-
     private void checkUserAuthenticatedByAuthBasic(String authorization) {
         if (!authorization.startsWith("Basic")) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Basic Auth Token required");
@@ -205,7 +197,7 @@ public class IdamSimulatorController {
 
     /**
      * This endpoint is not part of Idam an must use only to add user to the simulator.
-     * */
+     */
     @PostMapping("/simulator/user")
     public IdamUserAddReponse addNewUser(@RequestBody IdamUserInfo request) {
         LOG.info("Add new user in simulator for {} {} {}",

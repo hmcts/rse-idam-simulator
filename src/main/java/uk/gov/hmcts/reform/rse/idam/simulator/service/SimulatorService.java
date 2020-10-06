@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
 
 import java.util.Optional;
+import java.util.Random;
 
 @Component
 public class SimulatorService {
@@ -65,6 +67,16 @@ public class SimulatorService {
         userInMemory.get().setMostRecentCode(newCode);
         LOG.info("Oauth2 new code generated {}", newCode);
         return newCode;
+    }
+
+    public PinDetails createPinDetails(String authorization) {
+        SimObject user = liveMemoryService.getByBearerToken(authorization).get();
+        String newPinCode = Long.toString(new Random().nextLong());
+        user.setLastGeneratedPin(newPinCode);
+        PinDetails pin = new PinDetails();
+        pin.setPin(newPinCode);
+        pin.setUserId(user.getId());
+        return pin;
     }
 
     public  void checkUserHasBeenAuthenticateByBearerToken(String authorization) {

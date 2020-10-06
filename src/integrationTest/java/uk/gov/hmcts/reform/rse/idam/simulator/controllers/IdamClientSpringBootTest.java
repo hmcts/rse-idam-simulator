@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.reform.idam.client.IdamApi;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
 import uk.gov.hmcts.reform.idam.client.models.GeneratePinRequest;
+import uk.gov.hmcts.reform.idam.client.models.GeneratePinResponse;
 import uk.gov.hmcts.reform.idam.client.models.TokenResponse;
 import uk.gov.hmcts.reform.idam.client.models.UserDetails;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
@@ -62,6 +63,8 @@ public class IdamClientSpringBootTest {
     @Autowired
     IdamClient idamClient;
 
+    String accessToken;
+
     /*
     Idam Methods to test
             idamClient.
@@ -81,7 +84,7 @@ public class IdamClientSpringBootTest {
     public void setUp() {
         String userName = MYEMAIL_HMCTSTEST_NET;
         addUserToSimulator(BILLY, THE_KID, userName);
-        fetchAccessToken(userName);
+        accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
         assertNotNull(liveMemoryService);
     }
 
@@ -96,8 +99,6 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void openIdGetAccessTokenTest() {
-        String accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
-
         assertTrue(accessToken.startsWith("Bearer "));
         assertTrue(accessToken.length() > 575);
     }
@@ -105,8 +106,6 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void canSearchUserTest() {
-        String accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
-
         List<UserDetails> returnedUser = idamClient.searchUsers(accessToken, "return Smith");
 
         assertEquals(1, returnedUser.size());
@@ -115,8 +114,6 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserInfoTest() {
-        String accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
-
         UserInfo userInfo = idamClient.getUserInfo(accessToken);
 
         assertNotNull(userInfo);
@@ -125,8 +122,6 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserDetailsTest() {
-        String accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
-
         UserDetails userDetails = idamClient.getUserDetails(accessToken);
 
         assertEquals(Optional.of(THE_KID), userDetails.getSurname());
@@ -134,15 +129,13 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void fetchUserByUserId() {
-        String userName = MYEMAIL_HMCTSTEST_NET;
-        IdamUserInfo idamUserInfo = addUserToSimulator(BILLY, THE_KID, userName);
-        String accessToken = fetchAccessToken(userName);
+        IdamUserInfo idamUserInfo = addUserToSimulator("ForeName1", "SureName1", "AnotherEmail@hmcts.net");
 
         UserDetails userDetails = idamClient.getUserByUserId(accessToken, idamUserInfo.getUid());
 
-        assertEquals(Optional.of(THE_KID), userDetails.getSurname());
-        assertEquals(BILLY, userDetails.getForename());
-        assertEquals(MYEMAIL_HMCTSTEST_NET, userDetails.getEmail());
+        assertEquals(Optional.of("SureName1"), userDetails.getSurname());
+        assertEquals("ForeName1", userDetails.getForename());
+        assertEquals("AnotherEmail@hmcts.net", userDetails.getEmail());
         assertNotNull(userDetails.getId(), idamUserInfo.getUid());
     }
 
@@ -154,6 +147,15 @@ public class IdamClientSpringBootTest {
         assertEquals(tokenResponse.tokenType, "Bearer");
         assertNotNull(tokenResponse.accessToken);
         assertTrue(tokenResponse.accessToken.length() > 400);
+    }
+
+    @Test
+    public void generatePinTest() {
+        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
+
+        assertNotNull(generatePinResponse.getPin());
+        assertNotNull(generatePinResponse.getUserId());
     }
 
     @Test
