@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,6 +50,8 @@ public class IdamClientSpringBootTest {
     public static final String MYEMAIL_HMCTSTEST_NET = "myemail@hmctstest.net";
     public static final String THE_KID = "The Kid";
     public static final String BILLY = "Billy";
+    public static final int BEARER_SIZE = 400;
+    public static final int PIN_SIZE = 16;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @LocalServerPort
@@ -73,7 +76,7 @@ public class IdamClientSpringBootTest {
             .getUserDetails() //done
             .getUserByUserId() / Done
             .getAccessTokenResponse() // Done
-            .generatePin()
+            .generatePin() // Done
             .exchangeCode()
             .authenticatePinUser()
             .authenticateUser()// Done
@@ -94,13 +97,13 @@ public class IdamClientSpringBootTest {
         String deprecatedToken = idamClient.authenticateUser(MYEMAIL_HMCTSTEST_NET, "somePassword");
 
         assertTrue(deprecatedToken.startsWith("Bearer "));
-        assertTrue(deprecatedToken.length() > 575);
+        assertTrue(deprecatedToken.length() >= BEARER_SIZE);
     }
 
     @Test
     public void openIdGetAccessTokenTest() {
         assertTrue(accessToken.startsWith("Bearer "));
-        assertTrue(accessToken.length() > 575);
+        assertTrue(accessToken.length() >= BEARER_SIZE);
     }
 
 
@@ -146,7 +149,7 @@ public class IdamClientSpringBootTest {
         assertEquals(tokenResponse.scope, "openid profile roles");
         assertEquals(tokenResponse.tokenType, "Bearer");
         assertNotNull(tokenResponse.accessToken);
-        assertTrue(tokenResponse.accessToken.length() > 400);
+        assertTrue(tokenResponse.accessToken.length() >= BEARER_SIZE);
     }
 
     @Test
@@ -155,6 +158,7 @@ public class IdamClientSpringBootTest {
         GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
 
         assertNotNull(generatePinResponse.getPin());
+        assertSame(generatePinResponse.getPin().length(),PIN_SIZE);
         assertNotNull(generatePinResponse.getUserId());
     }
 

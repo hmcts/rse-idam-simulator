@@ -63,7 +63,7 @@ public class SimulatorService {
     @Deprecated
     public String generateOauth2Code(String username) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
-        String newCode = Long.toString(System.currentTimeMillis());
+        String newCode = generateRandomAlphanumeric(17);
         userInMemory.get().setMostRecentCode(newCode);
         LOG.info("Oauth2 new code generated {}", newCode);
         return newCode;
@@ -71,15 +71,16 @@ public class SimulatorService {
 
     public PinDetails createPinDetails(String authorization) {
         SimObject user = liveMemoryService.getByBearerToken(authorization).get();
-        String newPinCode = Long.toString(new Random().nextLong());
+        String newPinCode = generateRandomString(16);
         user.setLastGeneratedPin(newPinCode);
         PinDetails pin = new PinDetails();
         pin.setPin(newPinCode);
         pin.setUserId(user.getId());
+        LOG.info("Simulator Pin Code generated {}", newPinCode);
         return pin;
     }
 
-    public  void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
+    public void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
         if (!authorization.startsWith(BEARER_)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
         }
@@ -87,4 +88,27 @@ public class SimulatorService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
         }
     }
+
+    private String generateRandomString(int targetStringLength) {
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        Random random = new Random();
+        return random.ints(leftLimit, rightLimit + 1)
+            .limit(targetStringLength)
+            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+            .toString();
+    }
+
+    private String generateRandomAlphanumeric(int targetStringLength) {
+        int leftLimit = 48; // numeral '0'
+        int rightLimit = 122; // letter 'z'
+        Random random = new Random();
+
+        return random.ints(leftLimit, rightLimit + 1)
+            .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+            .limit(targetStringLength)
+            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+            .toString();
+    }
+
 }
