@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
 import java.util.Optional;
 import java.util.Random;
 
+@SuppressWarnings({"PMD.TooManyMethods"})
 @Component
 public class SimulatorService {
 
@@ -45,11 +46,11 @@ public class SimulatorService {
     }
 
     public void updateTokenInUser(String username, String token) {
-        Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
         userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
     }
 
-    public Optional<SimObject> checkUserInMemoryNotEmpty(String username) {
+    public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
         Optional<SimObject> userInMemory = liveMemoryService.getByEmail(username);
         if (userInMemory.isEmpty()) {
             throw new ResponseStatusException(
@@ -60,13 +61,26 @@ public class SimulatorService {
         return userInMemory;
     }
 
+    public Optional<SimObject> checkUserInMemoryNotEmptyByPin(String pin) {
+        Optional<SimObject> userInMemory = liveMemoryService.getByPin(pin);
+        if (userInMemory.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Idam Simulator: User with pin " + pin + " not found"
+            );
+        }
+        return userInMemory;
+    }
+
     @Deprecated
-    public String generateOauth2Code(String username) {
-        Optional<SimObject> userInMemory = checkUserInMemoryNotEmpty(username);
-        String newCode = generateRandomAlphanumeric(17);
-        userInMemory.get().setMostRecentCode(newCode);
-        LOG.info("Oauth2 new code generated {}", newCode);
-        return newCode;
+    public String generateOauth2CodeFromUserName(String username) {
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
+        return generateNewCode(userInMemory);
+    }
+
+    public String generateOauth2CodeFromPin(String pin) {
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByPin(pin);
+        return generateNewCode(userInMemory);
     }
 
     public PinDetails createPinDetails(String authorization) {
@@ -87,6 +101,13 @@ public class SimulatorService {
         if (liveMemoryService.getByBearerToken(authorization).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
         }
+    }
+
+    private String generateNewCode(Optional<SimObject> userInMemory) {
+        String newCode = generateRandomAlphanumeric(17);
+        userInMemory.get().setMostRecentCode(newCode);
+        LOG.info("Oauth2 new code generated {}", newCode);
+        return newCode;
     }
 
     private String generateRandomString(int targetStringLength) {

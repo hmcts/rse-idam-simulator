@@ -31,9 +31,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.gov.hmcts.reform.rse.idam.simulator.controllers.SimulatorDataFactory.getUserOne;
@@ -73,7 +71,7 @@ public class IdamSimulatorController {
         byte[] decoded = Base64.getDecoder().decode(authorization.replace("Basic ", ""));
         String username = new String(decoded).split(":")[0];
 
-        String newCode = simulatorService.generateOauth2Code(username);
+        String newCode = simulatorService.generateOauth2CodeFromUserName(username);
         return new AuthenticateUserResponse(newCode);
     }
 
@@ -114,7 +112,7 @@ public class IdamSimulatorController {
     public PinDetails postPin(@RequestBody GeneratePinRequest request,
                               @RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
-        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization); // Not sure Should not been Basic?
         return simulatorService.createPinDetails(authorization);
     }
 
@@ -123,11 +121,11 @@ public class IdamSimulatorController {
                                          @RequestParam(CLIENT_ID) final String clientId,
                                          @RequestParam(REDIRECT_URI) final String redirectUri,
                                          @RequestParam("state") final String state) {
-        LOG.info("Get Pin for pin {}", pin);
-        Map<String, Object> body = new ConcurrentHashMap<>();
-        body.put("code", "dummyValue");
+        LOG.info("Get Request Pin for pin {} to generate new code in Location Header", pin);
         HttpHeaders httpHeaders = new HttpHeaders();
-        return new ResponseEntity<>(body, httpHeaders, HttpStatus.OK);
+        String generatedPinCode = simulatorService.generateOauth2CodeFromPin(pin);
+        httpHeaders.add("Location", "http://somewebsite.co.uk?code=" + generatedPinCode);
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
     @GetMapping("/details")
@@ -216,6 +214,5 @@ public class IdamSimulatorController {
             .sub(request.getSub()).build());
         return new IdamUserAddReponse(request.getUid());
     }
-
 
 }
