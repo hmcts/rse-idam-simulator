@@ -64,8 +64,8 @@ public class IdamClientSpringBootTest {
     public static final String THE_KID = "The Kid";
     public static final String BILLY = "Billy";
     public static final int BEARER_SIZE = 400;
-    public static final int PIN_SIZE = 16;
-    public static final int CODE_SIZE = 17;
+    public static final int PIN_SIZE = 8;
+    public static final int CODE_SIZE = 105;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @LocalServerPort
@@ -199,7 +199,7 @@ public class IdamClientSpringBootTest {
             authenticateUserResponse.getCode(),
             "authorization_code",
             "https://dummyStuff:3000/receiver",
-            "aClientID",
+            "hmcts",
             "aClientSecret"
         );
 

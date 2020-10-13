@@ -21,6 +21,8 @@ public class SimulatorService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulatorService.class);
     public static final String BEARER_ = "Bearer ";
+    public static final int PIN_LENGTH = 8;
+    public static final int AUTH_CODE_LENGTH = 105;
 
     @Autowired
     private LiveMemoryService liveMemoryService;
@@ -85,7 +87,7 @@ public class SimulatorService {
 
     public PinDetails createPinDetails(String authorization) {
         SimObject user = liveMemoryService.getByBearerToken(authorization).get();
-        String newPinCode = generateRandomString(16);
+        String newPinCode = generateRandomString(PIN_LENGTH);
         user.setLastGeneratedPin(newPinCode);
         PinDetails pin = new PinDetails();
         pin.setPin(newPinCode);
@@ -104,7 +106,7 @@ public class SimulatorService {
     }
 
     private String generateNewCode(Optional<SimObject> userInMemory) {
-        String newCode = generateRandomAlphanumeric(17);
+        String newCode = generateRandomAlphanumeric(AUTH_CODE_LENGTH);
         userInMemory.get().setMostRecentCode(newCode);
         LOG.info("Oauth2 new code generated {}", newCode);
         return newCode;

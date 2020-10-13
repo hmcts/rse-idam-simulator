@@ -38,7 +38,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                             .header(AUTHORIZATION, "wrongOne")
                             .param("redirect_uri", "aRedirectUrl")
-                            .param("client_id", "aClientIdValue")
+                            .param("client_id", "hmcts")
                             .param("response_type", "code"))
             .andExpect(status().isUnauthorized())
             .andReturn();
