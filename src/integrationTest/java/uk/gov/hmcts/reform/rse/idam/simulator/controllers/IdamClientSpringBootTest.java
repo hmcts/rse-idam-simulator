@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * In short we have 3 ways to have a Bearer Token, this is indirectly tested in this integration test.
- * - Put o/token (username, password) --> Token
+ * - Post o/token (username, password) --> Token
  * - Post Oauth2/authorize (Authorization Header Basic) -->  code
  * Post Oauth2/token (code) --> Token
  * - Post pin (Authorization Header Basic) --> pin

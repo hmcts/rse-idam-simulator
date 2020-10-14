@@ -12,10 +12,11 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 
-@SuppressWarnings({"PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.LawOfDemeter"})
 @Component
 public class SimulatorService {
 
@@ -34,17 +35,17 @@ public class SimulatorService {
     private long expiration;
 
     public String generateAuthTokenFromCode(String code) {
-        String token = JwTokenGenerator.generateToken(issuer, expiration);
-        LOG.info("Oauth2 Token Generated {}", token);
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
+        String token = generateAToken(userInMemory.get().getEmail());
+        LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
         if (userInMemory.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: No User for this code " + code);
         }
         return token;
     }
 
-    public String generateAToken() {
-        return JwTokenGenerator.generateToken(issuer, expiration);
+    public String generateAToken(String userName) {
+        return JwTokenGenerator.generateToken(issuer, expiration, userName);
     }
 
     public void updateTokenInUser(String username, String token) {
@@ -92,6 +93,8 @@ public class SimulatorService {
         PinDetails pin = new PinDetails();
         pin.setPin(newPinCode);
         pin.setUserId(user.getId());
+        final String expiry = String.valueOf(java.sql.Timestamp.valueOf(LocalDateTime.now().minusHours(4)).getTime());
+        pin.setExpiry(expiry);
         LOG.info("Simulator Pin Code generated {}", newPinCode);
         return pin;
     }

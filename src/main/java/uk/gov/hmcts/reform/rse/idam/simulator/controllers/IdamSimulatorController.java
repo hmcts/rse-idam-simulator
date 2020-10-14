@@ -54,6 +54,18 @@ public class IdamSimulatorController {
     @Value("${simulator.jwt.expiration}")
     private long expiration;
 
+
+    //POST oauth2/authorize
+    //POST oauth2/token
+    //POST /o/token
+    //POST /pin DONE
+    //GET /pin DONE
+    //GET details DONE
+    //GET /o/userinfo DONE
+    //GET api/v1/users/{userId} DONE
+    //GET /api/v1/users DONE
+
+
     /*
     This method is no longer acceptable as idam now uses OpenID Connect and /oauth2/authorize endpoint is deprecated.
     */
@@ -98,9 +110,9 @@ public class IdamSimulatorController {
                                         @RequestParam("scope") final String scope) {
         LOG.info("Request OpenId Token for clientId {} Username {} and scope {}", clientId, username, scope);
 
-        String token = simulatorService.generateAToken();
-        String refreshToken = simulatorService.generateAToken();
-        String idToken = simulatorService.generateAToken();
+        String token = simulatorService.generateAToken(username);
+        String refreshToken = simulatorService.generateAToken(username);
+        String idToken = simulatorService.generateAToken(username);
         LOG.info("Access Open Id Token Generated {}", token);
         simulatorService.updateTokenInUser(username, token);
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
@@ -112,7 +124,11 @@ public class IdamSimulatorController {
     public PinDetails postPin(@RequestBody GeneratePinRequest request,
                               @RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
-        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization); // Not sure Should not been Basic?
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
+        // Not sure Should not been Basic?
+        // No clear because no header found in the source code of idam api.
+        // very likely it's not necessary because this call indeed generate the pin and send it to an email of by post
+
         return simulatorService.createPinDetails(authorization);
     }
 

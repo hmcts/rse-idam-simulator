@@ -154,7 +154,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return an open id token")
     @Test
     public void returnOpenIdToken() throws Exception {
-        when(simulatorService.generateAToken()).thenReturn(TOKEN);
+        when(simulatorService.generateAToken(anyString())).thenReturn(TOKEN);
         when(liveMemoryService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
 
         mockMvc.perform(post("/o/token")
@@ -177,7 +177,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andReturn();
 
         verify(simulatorService, times(3))
-            .generateAToken();
+            .generateAToken("aUserName");
         verify(simulatorService, times(1))
             .updateTokenInUser("aUserName", TOKEN);
     }
