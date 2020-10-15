@@ -4,6 +4,7 @@ public class PinDetails {
 
     private String pin;
     private String userId;
+    private String expiry;
 
     public String getPin() {
         return pin;
@@ -19,5 +20,13 @@ public class PinDetails {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getExpiry() {
+        return expiry;
+    }
+
+    public void setExpiry(String expiry) {
+        this.expiry = expiry;
     }
 }

@@ -12,6 +12,7 @@ public final class SimulatorDataFactory {
     public static final String TEST_EMAIL_HMCTS_NET = "test-email@hmcts.net";
     public static final String ROLE_1 = "role1";
     public static final String ROLE_2 = "role2";
+    public static final String CLIENT_ID = "hmcts";
 
     private SimulatorDataFactory() {
     }
@@ -29,7 +30,7 @@ public final class SimulatorDataFactory {
     public static SimObject createSimObject() {
         return SimObject.builder()
             .surname(SMITH)
-            .clientId("oneClientId")
+            .clientId(CLIENT_ID)
             .forename(JOHN)
             .email(TEST_EMAIL_HMCTS_NET)
             .sub("oneSub")

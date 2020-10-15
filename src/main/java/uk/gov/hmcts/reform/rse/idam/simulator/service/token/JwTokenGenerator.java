@@ -14,12 +14,13 @@ public final class JwTokenGenerator {
     private JwTokenGenerator() {
     }
 
-    public static String generateToken(String issuer, long ttlMillis) {
+    public static String generateToken(String issuer, long ttlMillis, String userName) {
 
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
             .subject("RSE-Idam-Simulator")
             .issueTime(new Date())
             .issuer(issuer)
+            .claim("sub", userName)
             .claim("tokenName", "access_token");
 
         if (ttlMillis >= 0) {
