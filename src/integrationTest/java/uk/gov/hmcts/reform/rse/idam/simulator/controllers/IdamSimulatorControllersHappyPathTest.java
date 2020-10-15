@@ -138,10 +138,10 @@ public class IdamSimulatorControllersHappyPathTest {
 
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                            .param("grant_type", "client_credential")
+                            .param("grant_type", "client_credentials")
                             .param(REDIRECT_URI, "aRedirectUrl")
                             .param(CLIENT_ID, CLIENT_ID_HMCTS)
-                            .param("code", "1234")
+                            .param("code", "123456")
                             .param("client_secret", "oneSecret"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.access_token").isString())
@@ -234,7 +234,6 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$[0].surname").value(SMITH))
             .andExpect(jsonPath("$[0].roles[0]").value(ROLE_1))
             .andExpect(jsonPath("$[0].roles[1]").value(ROLE_2))
-
             .andReturn();
     }
 

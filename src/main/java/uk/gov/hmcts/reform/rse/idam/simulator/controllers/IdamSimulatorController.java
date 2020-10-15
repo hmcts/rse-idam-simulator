@@ -44,6 +44,8 @@ public class IdamSimulatorController {
     private static final Logger LOG = LoggerFactory.getLogger(IdamSimulatorController.class);
     public static final String CLIENT_ID = "client_id";
     public static final String REDIRECT_URI = "redirect_uri";
+    private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
+    private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
     @Autowired
     private SimulatorService simulatorService;
@@ -53,18 +55,6 @@ public class IdamSimulatorController {
 
     @Value("${simulator.jwt.expiration}")
     private long expiration;
-
-
-    //POST oauth2/authorize
-    //POST oauth2/token
-    //POST /o/token
-    //POST /pin DONE
-    //GET /pin DONE
-    //GET details DONE
-    //GET /o/userinfo DONE
-    //GET api/v1/users/{userId} DONE
-    //GET /api/v1/users DONE
-
 
     /*
     This method is no longer acceptable as idam now uses OpenID Connect and /oauth2/authorize endpoint is deprecated.
@@ -95,9 +85,33 @@ public class IdamSimulatorController {
                                              @RequestParam("code") final String code) {
         LOG.info("Request oauth2 token for code {} and clientId {}", code, clientId);
 
+        checkGrantType(grantType);
+        checkCode(grantType, code);
+
         String token = simulatorService.generateAuthTokenFromCode(code);
 
         return new TokenExchangeResponse(token);
+    }
+
+    private void checkCode(String grantType, String code) {
+        if (grantType.equalsIgnoreCase(GRANT_TYPE_AUTHORIZATION_CODE) && (code == null || code.length() < 4)) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Idam Simulator: Code is missing or too short. With " + GRANT_TYPE_AUTHORIZATION_CODE
+                    + " code is mandatory "
+            );
+        }
+    }
+
+    private void checkGrantType(String grantType) {
+        if (!(grantType.equalsIgnoreCase(GRANT_TYPE_CLIENT_CREDENTIALS) || grantType.equalsIgnoreCase(
+            GRANT_TYPE_AUTHORIZATION_CODE))) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Idam Simulator: Grand type not valid" + grantType + ", must be "
+                    + GRANT_TYPE_AUTHORIZATION_CODE + " or " + GRANT_TYPE_CLIENT_CREDENTIALS
+            );
+        }
     }
 
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
