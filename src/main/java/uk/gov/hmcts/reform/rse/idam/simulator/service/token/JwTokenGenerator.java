@@ -9,18 +9,24 @@ import com.nimbusds.jwt.SignedJWT;
 
 import java.util.Date;
 
+@SuppressWarnings({"PMD.UseObjectForClearerAPI"})
 public final class JwTokenGenerator {
 
     private JwTokenGenerator() {
     }
 
-    public static String generateToken(String issuer, long ttlMillis, String userName) {
+    public static String generateToken(String issuer, long ttlMillis, String userName,
+                                       String serviceId, String grantType) {
 
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
             .subject("RSE-Idam-Simulator")
             .issueTime(new Date())
             .issuer(issuer)
+            .claim("token_type", "Bearer")
+            .claim("aud", serviceId)
             .claim("sub", userName)
+            .claim("grant_type", grantType)
+            .claim("realm", "/hmcts")
             .claim("tokenName", "access_token");
 
         if (ttlMillis >= 0) {

@@ -88,7 +88,7 @@ public class IdamSimulatorController {
         checkGrantType(grantType);
         checkCode(grantType, code);
 
-        String token = simulatorService.generateAuthTokenFromCode(code);
+        String token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
 
         return new TokenExchangeResponse(token);
     }
@@ -124,9 +124,9 @@ public class IdamSimulatorController {
                                         @RequestParam("scope") final String scope) {
         LOG.info("Request OpenId Token for clientId {} Username {} and scope {}", clientId, username, scope);
 
-        String token = simulatorService.generateAToken(username);
-        String refreshToken = simulatorService.generateAToken(username);
-        String idToken = simulatorService.generateAToken(username);
+        String token = simulatorService.generateAToken(username, clientId, grantType);
+        String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
+        String idToken = simulatorService.generateAToken(username, clientId, grantType);
         LOG.info("Access Open Id Token Generated {}", token);
         simulatorService.updateTokenInUser(username, token);
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,

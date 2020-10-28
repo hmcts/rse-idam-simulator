@@ -134,7 +134,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return an oauth 2 token")
     @Test
     public void returnOauth2Token() throws Exception {
-        when(simulatorService.generateAuthTokenFromCode(anyString())).thenReturn(TOKEN);
+        when(simulatorService.generateAuthTokenFromCode(anyString(), anyString(), anyString())).thenReturn(TOKEN);
 
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -148,13 +148,13 @@ public class IdamSimulatorControllersHappyPathTest {
             .andReturn();
 
         verify(simulatorService, times(1))
-            .generateAuthTokenFromCode(Mockito.anyString());
+            .generateAuthTokenFromCode(anyString(), anyString(), anyString());
     }
 
     @DisplayName("Should return an open id token")
     @Test
     public void returnOpenIdToken() throws Exception {
-        when(simulatorService.generateAToken(anyString())).thenReturn(TOKEN);
+        when(simulatorService.generateAToken(anyString(), anyString(), anyString())).thenReturn(TOKEN);
         when(liveMemoryService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
 
         mockMvc.perform(post("/o/token")
@@ -177,7 +177,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andReturn();
 
         verify(simulatorService, times(3))
-            .generateAToken("aUserName");
+            .generateAToken("aUserName", CLIENT_ID_HMCTS, "grantable");
         verify(simulatorService, times(1))
             .updateTokenInUser("aUserName", TOKEN);
     }

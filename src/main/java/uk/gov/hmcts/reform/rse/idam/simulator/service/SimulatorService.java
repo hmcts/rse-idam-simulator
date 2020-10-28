@@ -34,9 +34,9 @@ public class SimulatorService {
     @Value("${simulator.jwt.expiration}")
     private long expiration;
 
-    public String generateAuthTokenFromCode(String code) {
+    public String generateAuthTokenFromCode(String code, String serviceId, String grantType) {
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
-        String token = generateAToken(userInMemory.get().getEmail());
+        String token = generateAToken(userInMemory.get().getEmail(), serviceId,grantType);
         LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
         if (userInMemory.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: No User for this code " + code);
@@ -44,8 +44,8 @@ public class SimulatorService {
         return token;
     }
 
-    public String generateAToken(String userName) {
-        return JwTokenGenerator.generateToken(issuer, expiration, userName);
+    public String generateAToken(String userName, String clientID, String grantType) {
+        return JwTokenGenerator.generateToken(issuer, expiration, userName, clientID, grantType);
     }
 
     public void updateTokenInUser(String username, String token) {
