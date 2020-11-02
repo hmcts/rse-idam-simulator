@@ -65,7 +65,7 @@ public class IdamClientSpringBootTest {
     public static final String BILLY = "Billy";
     public static final int BEARER_SIZE = 400;
     public static final int PIN_SIZE = 8;
-    public static final int CODE_SIZE = 105;
+    public static final int CODE_SIZE = 27;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @LocalServerPort

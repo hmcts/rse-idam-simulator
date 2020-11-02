@@ -23,7 +23,7 @@ public class SimulatorService {
     private static final Logger LOG = LoggerFactory.getLogger(SimulatorService.class);
     public static final String BEARER_ = "Bearer ";
     public static final int PIN_LENGTH = 8;
-    public static final int AUTH_CODE_LENGTH = 105;
+    public static final int AUTH_CODE_LENGTH = 27;
 
     @Autowired
     private LiveMemoryService liveMemoryService;
