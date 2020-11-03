@@ -141,15 +141,9 @@ public class IdamSimulatorController {
     }
 
     @PostMapping("/pin")
-    public PinDetails postPin(@RequestBody GeneratePinRequest request,
-                              @RequestHeader(AUTHORIZATION) String authorization) {
+    public PinDetails postPin(@RequestBody GeneratePinRequest request) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
-        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        // Not sure Should not been Basic?
-        // No clear because no header found in the source code of idam api.
-        // very likely it's not necessary because this call indeed generate the pin and send it to an email of by post
-
-        return simulatorService.createPinDetails(authorization);
+        return simulatorService.createPinDetails(request.getFirstName(), request.getLastName());
     }
 
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)

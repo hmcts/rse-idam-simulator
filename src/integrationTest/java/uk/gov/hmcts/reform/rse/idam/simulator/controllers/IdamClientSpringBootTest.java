@@ -159,7 +159,9 @@ public class IdamClientSpringBootTest {
 
     @Test
     public void generatePinTest() {
-        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinRequest pinRequest = GeneratePinRequest.builder()
+            .firstName(BILLY).lastName(THE_KID)
+            .build();
         GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
         // Not sure it should be an access token, it's probably more a Basic One.
 
@@ -171,7 +173,9 @@ public class IdamClientSpringBootTest {
     @Test
     public void authPinUser() throws UnsupportedEncodingException {
 
-        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinRequest pinRequest = GeneratePinRequest.builder()
+            .firstName(BILLY).lastName(THE_KID)
+            .build();
         GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
 
         AuthenticateUserResponse authUserResponse = idamClient.authenticatePinUser(
@@ -187,7 +191,9 @@ public class IdamClientSpringBootTest {
     @Test
     public void exchangeCode() throws UnsupportedEncodingException {
 
-        GeneratePinRequest pinRequest = new GeneratePinRequest("pinRName");
+        GeneratePinRequest pinRequest  = GeneratePinRequest.builder()
+            .firstName(BILLY).lastName(THE_KID)
+            .build();
         GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
 
         AuthenticateUserResponse authenticateUserResponse = idamClient.authenticatePinUser(
@@ -218,10 +224,6 @@ public class IdamClientSpringBootTest {
 
         expect401Error(() -> {
             idamClient.searchUsers("wrong token", "a query");
-        });
-
-        expect401Error(() -> {
-            idamClient.generatePin(new GeneratePinRequest("name"), "wrong stuff");
         });
 
         expect401Error(() -> {

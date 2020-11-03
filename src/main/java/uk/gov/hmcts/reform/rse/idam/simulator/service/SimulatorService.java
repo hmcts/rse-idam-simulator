@@ -91,8 +91,8 @@ public class SimulatorService {
         return generateNewCode(userInMemory);
     }
 
-    public PinDetails createPinDetails(String authorization) {
-        SimObject user = liveMemoryService.getByBearerToken(authorization).get();
+    public PinDetails createPinDetails(String firstName, String lastName) {
+        SimObject user = liveMemoryService.getByName(firstName, lastName).get();
         String newPinCode = generateRandomString(PIN_LENGTH);
         user.setLastGeneratedPin(newPinCode);
         PinDetails pin = new PinDetails();
