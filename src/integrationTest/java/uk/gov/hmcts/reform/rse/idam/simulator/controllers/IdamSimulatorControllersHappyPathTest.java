@@ -147,7 +147,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
 
-        verify(simulatorService, times(1))
+        verify(simulatorService, times(3))
             .generateAuthTokenFromCode(anyString(), anyString(), anyString());
     }
 

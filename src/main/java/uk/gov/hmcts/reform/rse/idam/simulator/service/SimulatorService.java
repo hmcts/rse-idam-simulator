@@ -53,6 +53,11 @@ public class SimulatorService {
         userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
     }
 
+    public void updateTokenInUserFromCode(String code, String token) {
+        Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
+        userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
+    }
+
     public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
         Optional<SimObject> userInMemory = liveMemoryService.getByEmail(username);
         if (userInMemory.isEmpty()) {
