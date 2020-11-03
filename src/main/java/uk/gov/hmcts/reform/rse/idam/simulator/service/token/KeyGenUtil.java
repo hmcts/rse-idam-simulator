@@ -7,25 +7,19 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 @SuppressWarnings("PMD.NonThreadSafeSingleton")
 public final class KeyGenUtil {
 
-    private static RSAKey rsaJwk;
     private static final String KEY_ID = "23456789";
 
     private KeyGenUtil() {
     }
 
     public static RSAKey getRsaJwk() {
-
-        if (rsaJwk == null) {
-            try {
-                rsaJwk = new RSAKeyGenerator(2048)
-                    .keyID(KEY_ID)
-                    .generate();
-            } catch (JOSEException josee) {
-                throw new TokenGenerationException("Impossible to generate RSA Key", josee);
-            }
+        try {
+            return new RSAKeyGenerator(2048)
+                .keyID(KEY_ID)
+                .generate();
+        } catch (JOSEException josee) {
+            throw new TokenGenerationException("Impossible to generate RSA Key", josee);
         }
-
-        return rsaJwk;
     }
 
 }

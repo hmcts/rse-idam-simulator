@@ -30,6 +30,17 @@ public class LiveMemoryService {
             .findFirst();
     }
 
+    public Optional<SimObject> getByName(String firstName, String lastName) {
+        return memories.entrySet().stream()
+            .filter(es -> es.getValue() != null)
+            .filter(es -> es.getValue().getForename().equalsIgnoreCase(firstName)
+                && es.getValue().getSurname().equalsIgnoreCase(
+                lastName)
+            )
+            .map(es -> es.getValue())
+            .findFirst();
+    }
+
     public Optional<SimObject> getByCode(String code) {
         return memories.entrySet().stream()
             .filter(es -> es.getValue() != null && es.getValue().getMostRecentCode() != null)

@@ -23,7 +23,7 @@ public class SimulatorService {
     private static final Logger LOG = LoggerFactory.getLogger(SimulatorService.class);
     public static final String BEARER_ = "Bearer ";
     public static final int PIN_LENGTH = 8;
-    public static final int AUTH_CODE_LENGTH = 105;
+    public static final int AUTH_CODE_LENGTH = 27;
 
     @Autowired
     private LiveMemoryService liveMemoryService;
@@ -50,6 +50,11 @@ public class SimulatorService {
 
     public void updateTokenInUser(String username, String token) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
+        userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
+    }
+
+    public void updateTokenInUserFromCode(String code, String token) {
+        Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
         userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
     }
 
@@ -86,8 +91,8 @@ public class SimulatorService {
         return generateNewCode(userInMemory);
     }
 
-    public PinDetails createPinDetails(String authorization) {
-        SimObject user = liveMemoryService.getByBearerToken(authorization).get();
+    public PinDetails createPinDetails(String firstName, String lastName) {
+        SimObject user = liveMemoryService.getByName(firstName, lastName).get();
         String newPinCode = generateRandomString(PIN_LENGTH);
         user.setLastGeneratedPin(newPinCode);
         PinDetails pin = new PinDetails();

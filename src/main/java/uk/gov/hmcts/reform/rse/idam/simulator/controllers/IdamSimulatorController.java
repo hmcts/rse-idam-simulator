@@ -22,7 +22,6 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserAddRepo
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
-import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenExchangeResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
@@ -78,19 +77,26 @@ public class IdamSimulatorController {
     }
 
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public TokenExchangeResponse oauth2Token(@RequestParam(CLIENT_ID) final String clientId,
-                                             @RequestParam(REDIRECT_URI) final String redirectUri,
-                                             @RequestParam("client_secret") final String clientSecret,
-                                             @RequestParam("grant_type") final String grantType,
-                                             @RequestParam("code") final String code) {
+    public TokenResponse oauth2Token(@RequestParam(CLIENT_ID) final String clientId,
+                                     @RequestParam(REDIRECT_URI) final String redirectUri,
+                                     @RequestParam("client_secret") final String clientSecret,
+                                     @RequestParam("grant_type") final String grantType,
+                                     @RequestParam("code") final String code) {
         LOG.info("Request oauth2 token for code {} and clientId {}", code, clientId);
 
         checkGrantType(grantType);
         checkCode(grantType, code);
 
         String token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        String refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        String idToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        LOG.info("New oauth2 token Generated {}", token);
 
-        return new TokenExchangeResponse(token);
+        simulatorService.updateTokenInUserFromCode(code, token);
+
+        return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
+                                 "openid profile roles", "Bearer"
+        );
     }
 
     private void checkCode(String grantType, String code) {
@@ -135,15 +141,9 @@ public class IdamSimulatorController {
     }
 
     @PostMapping("/pin")
-    public PinDetails postPin(@RequestBody GeneratePinRequest request,
-                              @RequestHeader(AUTHORIZATION) String authorization) {
+    public PinDetails postPin(@RequestBody GeneratePinRequest request) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
-        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        // Not sure Should not been Basic?
-        // No clear because no header found in the source code of idam api.
-        // very likely it's not necessary because this call indeed generate the pin and send it to an email of by post
-
-        return simulatorService.createPinDetails(authorization);
+        return simulatorService.createPinDetails(request.getFirstName(), request.getLastName());
     }
 
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)

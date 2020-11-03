@@ -17,7 +17,6 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,7 +64,7 @@ public class IdamSimulatorControllersHappyPathTest {
         PinDetails pinDetails = new PinDetails();
         pinDetails.setPin("eEdhNnasWy7eNFAV");
         pinDetails.setUserId("oneUserId");
-        when(simulatorService.createPinDetails(any())).thenReturn(pinDetails);
+        when(simulatorService.createPinDetails(anyString(), anyString())).thenReturn(pinDetails);
 
         mockMvc.perform(post("/pin")
                             .header(AUTHORIZATION, BEARER_TOKEN)
@@ -147,7 +146,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
 
-        verify(simulatorService, times(1))
+        verify(simulatorService, times(3))
             .generateAuthTokenFromCode(anyString(), anyString(), anyString());
     }
 
