@@ -88,6 +88,38 @@ docker image rm <image-id>
 There is no need to remove postgres and java or similar core images.
 
 
+## How to use the simulator
+Check IdamSimulatorController to see how works the endpoints. These endpoints are all the enpoints required to have the idam java client working correctly,
+and one endpoint to add a user in the local memory map of the simulator. Keep in mind that username and email are the same in Idam system.
+
+Here a quick start to request a token.
+
+Add an user by doing this request:
+```
+POST  http://localhost:5556/simulator/user
+{
+
+"email": "myemail-test@hmcts.net",
+"given_name": "John",
+"family_name": "Smith",
+"roles": ["role1", "role2"]
+
+}
+```
+
+Have an openId Token using this call
+```
+POST  http://localhost:5556/o/token
+Content-type: application/x-www-form-urlencoded
+client_id: sometestservice
+client_secret: sometestservice
+grant_type: password
+redirect_uri: https://davidtestservice.com
+username: myemail-test@hmcts.net
+password: somePassword
+scope: openid profile roles
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
