@@ -25,6 +25,7 @@ import uk.gov.hmcts.reform.idam.client.models.TokenExchangeResponse;
 import uk.gov.hmcts.reform.idam.client.models.TokenResponse;
 import uk.gov.hmcts.reform.idam.client.models.UserDetails;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
@@ -245,20 +246,28 @@ public class IdamClientSpringBootTest {
     }
 
     private IdamUserInfo addUserToSimulator(String forename, String surename, String email) {
-        final String uri = "http://localhost:" + localServerPort + "/simulator/user";
+        final String uri = "http://localhost:" + localServerPort + "/testing-support/accounts";
         RestTemplate restTemplate = new RestTemplate();
 
-        IdamUserInfo idamUserInfo = new IdamUserInfo();
-        idamUserInfo.setEmail(email);
-        idamUserInfo.setGivenName(forename);
-        idamUserInfo.setFamilyName(surename);
-        idamUserInfo.setRoles(Arrays.asList("role1", "role2"));
+        IdamTestingUser idamTestingUser = new IdamTestingUser();
+        idamTestingUser.setEmail(email);
+        idamTestingUser.setForename(forename);
+        idamTestingUser.setSurname(surename);
+        idamTestingUser.setRoles(Arrays.asList("role1", "role2"));
+        idamTestingUser.setPassword("OnePassword");
 
-        String postForObject = restTemplate.postForObject(uri, idamUserInfo, String.class);
+        String postForObject = restTemplate.postForObject(uri, idamTestingUser, String.class);
 
         String userUuid = extractUserUid(postForObject);
 
+        IdamUserInfo idamUserInfo = new IdamUserInfo();
+        idamUserInfo.setRoles(idamTestingUser.getRoles());
+        idamUserInfo.setEmail(idamTestingUser.getEmail());
+        idamUserInfo.setFamilyName(idamTestingUser.getSurname());
+        idamUserInfo.setGivenName(idamTestingUser.getForename());
         idamUserInfo.setUid(userUuid);
+        idamUserInfo.setSub(idamTestingUser.getEmail());
+        idamUserInfo.setRoles(idamTestingUser.getRoles());
         return idamUserInfo;
     }
 

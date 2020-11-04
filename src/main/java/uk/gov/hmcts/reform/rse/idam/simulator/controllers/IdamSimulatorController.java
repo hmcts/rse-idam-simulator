@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserAddReponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
@@ -226,23 +227,21 @@ public class IdamSimulatorController {
     /**
      * This endpoint is not part of Idam an must use only to add user to the simulator.
      */
-    @PostMapping("/simulator/user")
-    public IdamUserAddReponse addNewUser(@RequestBody IdamUserInfo request) {
+    @PostMapping("/testing-support/accounts")
+    public IdamUserAddReponse addNewUser(@RequestBody IdamTestingUser request) {
+        String userId = UUID.randomUUID().toString();
         LOG.info("Add new user in simulator for {} {} {}",
-                 request.getEmail(), request.getFamilyName(), request.getUid()
+                 request.getEmail(), request.getSurname(), userId
         );
-        if (request.getUid() == null) {
-            request.setUid(UUID.randomUUID().toString());
-            LOG.info("UUID generated in simulator for new user {} {}", request.getEmail(), request.getUid());
-        }
-        liveMemoryService.putSimObject(request.getUid(), SimObject.builder()
+
+        liveMemoryService.putSimObject(userId, SimObject.builder()
             .email(request.getEmail())
-            .surname(request.getFamilyName())
-            .forename(request.getGivenName())
-            .id(request.getUid())
+            .surname(request.getSurname())
+            .forename(request.getForename())
+            .id(userId)
             .roles(request.getRoles())
-            .sub(request.getSub()).build());
-        return new IdamUserAddReponse(request.getUid());
+            .build());
+        return new IdamUserAddReponse(userId);
     }
 
 }

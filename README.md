@@ -21,7 +21,10 @@ To build the project execute the following command:
   ./gradlew build
 ```
 
-### Running the application
+### Running/Debugging the application with IntelliJ Idea
+Right click on Application.java and choose Run 'Application.main()' or Debug 'Application.main()'
+
+### Running the application with Docker
 
 Create the image of the application by executing the following command:
 
@@ -89,28 +92,31 @@ There is no need to remove postgres and java or similar core images.
 
 
 ## How to use the simulator
-Check IdamSimulatorController to see how works the endpoints. These endpoints are all the enpoints required to have the idam java client working correctly,
+Check IdamSimulatorController to see how works the endpoints. These endpoints are all the endpoints required to have the idam java client working correctly,
 and one endpoint to add a user in the local memory map of the simulator. Keep in mind that username and email are the same in Idam system.
 
-Here a quick start to request a token.
+Here a quick start and having a request a token using postman and the open id route.
 
 Add an user by doing this request:
 ```
-POST  http://localhost:5556/simulator/user
+POST  http://localhost:5556/testing-support/accounts
+Content-type: application/json
 {
 
 "email": "myemail-test@hmcts.net",
-"given_name": "John",
-"family_name": "Smith",
-"roles": ["role1", "role2"]
+"forename": "John",
+"surename": "Smith",
+"roles": ["role1", "role2"],
+"password": "onePassword"
 
 }
 ```
 
-Have an openId Token using this call
+Have an openId Token using this call. Notice this is not some Jason content but x-www-form-urlencoded content.
 ```
 POST  http://localhost:5556/o/token
 Content-type: application/x-www-form-urlencoded
+
 client_id: sometestservice
 client_secret: sometestservice
 grant_type: password
@@ -121,6 +127,3 @@ scope: openid profile roles
 ```
 
 ## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
