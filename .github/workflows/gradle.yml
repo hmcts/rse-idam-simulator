@@ -15,8 +15,8 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Check
-      run: ./gradlew check -i
+    - name: Build
+      run: ./gradlew build -i
 
   push_to_registry:
     name: Push Docker image to Docker Hub
