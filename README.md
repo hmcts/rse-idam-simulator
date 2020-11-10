@@ -91,7 +91,7 @@ docker image rm <image-id>
 There is no need to remove postgres and java or similar core images.
 
 
-## How to use the simulator
+## How to use the simulator with Post Man
 Check IdamSimulatorController to see how works the endpoints. These endpoints are all the endpoints required to have the idam java client working correctly,
 and one endpoint to add a user in the local memory map of the simulator. Keep in mind that username and email are the same in Idam system.
 
@@ -125,6 +125,11 @@ username: myemail-test@hmcts.net
 password: somePassword
 scope: openid profile roles
 ```
+
+## How to add an user and request a token using swagger?
+Do same operation than above but using these swaggers endpoints from any browser:
+- http://localhost:5556/swagger-ui.html#/idam-simulator-controller/addNewUserUsingPOST
+- http://localhost:5556/swagger-ui.html#/idam-simulator-controller/getOpenIdTokenUsingPOST
 
 ## License
 
