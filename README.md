@@ -90,6 +90,15 @@ docker image rm <image-id>
 
 There is no need to remove postgres and java or similar core images.
 
+## How to pull an image from of the simulator and run it with docker
+Execute these 3 commands
+```
+az acr login --name hmctspublic
+docker pull hmctspublic.azurecr.io/hmcts/rse/rse-idam-simulator:latest
+docker run -d -P --name rse-idam-simulator -p 5556:5556 hmctspublic.azurecr.io/hmcts/rse/rse-idam-simulator:latest
+```
+
+Open this url http://localhost:5556/health to check it has started correctly
 
 ## How to use the simulator with Post Man
 Check IdamSimulatorController to see how works the endpoints. These endpoints are all the endpoints required to have the idam java client working correctly,
