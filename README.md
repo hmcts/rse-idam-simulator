@@ -89,7 +89,7 @@ Run the distribution (created in `build/install/rse-idam-simulator` directory)
 by executing the following command:
 
 ```bash
-  docker-compose up
+  docker-compose up -d
 ```
 
 This will start the API container exposing the application's port
