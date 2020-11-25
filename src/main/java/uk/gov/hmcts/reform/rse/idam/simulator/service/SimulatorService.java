@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGenerator;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -24,6 +24,9 @@ public class SimulatorService {
     public static final String BEARER_ = "Bearer ";
     public static final int PIN_LENGTH = 8;
     public static final int AUTH_CODE_LENGTH = 27;
+
+    @Autowired
+    private JwTokenGeneratorService jwTokenGenerator;
 
     @Autowired
     private LiveMemoryService liveMemoryService;
@@ -45,7 +48,7 @@ public class SimulatorService {
     }
 
     public String generateAToken(String userName, String clientID, String grantType) {
-        return JwTokenGenerator.generateToken(issuer, expiration, userName, clientID, grantType);
+        return jwTokenGenerator.generateToken(issuer, expiration, userName, clientID, grantType);
     }
 
     public void updateTokenInUser(String username, String token) {

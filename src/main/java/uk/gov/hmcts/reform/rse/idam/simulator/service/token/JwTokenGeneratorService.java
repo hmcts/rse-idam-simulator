@@ -4,18 +4,18 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI"})
-public final class JwTokenGenerator {
+@Component
+public class JwTokenGeneratorService {
 
-    private JwTokenGenerator() {
-    }
-
-    public static String generateToken(String issuer, long ttlMillis, String userName,
+    public synchronized String generateToken(String issuer, long ttlMillis, String userName,
                                        String serviceId, String grantType) {
 
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
@@ -35,13 +35,18 @@ public final class JwTokenGenerator {
             builder.expirationTime(exp);
         }
 
+        RSAKey rsaJwk1 = KeyGenUtil.getRsaJwk();
+        RSAKey rsaJwk2 = KeyGenUtil.getRsaJwk();
+
+        JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.RS256)
+            .keyID(rsaJwk1.getKeyID()).build();
+
         SignedJWT signedJwt = new SignedJWT(
-            new JWSHeader.Builder(JWSAlgorithm.RS256)
-                .keyID(KeyGenUtil.getRsaJwk().getKeyID()).build(),
+            jwsHeader,
             builder.build()
         );
         try {
-            signedJwt.sign(new RSASSASigner(KeyGenUtil.getRsaJwk()));
+            signedJwt.sign(new RSASSASigner(rsaJwk2));
         } catch (JOSEException josee) {
             throw new TokenGenerationException("Error when signing token", josee);
         }

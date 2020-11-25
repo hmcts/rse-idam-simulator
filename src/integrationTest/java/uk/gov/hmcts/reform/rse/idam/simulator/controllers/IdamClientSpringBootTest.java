@@ -29,6 +29,8 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JasonWebKeyService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -54,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     "PMD.JUnitTestsShouldIncludeAssert", "PMD.LawOfDemeter", "PMD.ExcessiveImports"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
-    LiveMemoryService.class, SimulatorService.class},
+    LiveMemoryService.class, SimulatorService.class, JasonWebKeyService.class, JwTokenGeneratorService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yml")
 @EnableAutoConfiguration

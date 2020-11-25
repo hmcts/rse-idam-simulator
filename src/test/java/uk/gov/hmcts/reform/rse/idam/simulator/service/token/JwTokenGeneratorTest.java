@@ -10,13 +10,14 @@ public class JwTokenGeneratorTest {
 
     @Test
     public void generatorShouldReturnADifferentTokenEachTime() {
+        JwTokenGeneratorService jwTokenGeneratorService = new JwTokenGeneratorService();
         String issuer = "issued";
         long ttl = 900;
         String userName = "username";
         String serviceId = "myserviceId";
         String grantType = "password";
-        String token1 = JwTokenGenerator.generateToken(issuer, ttl, userName, serviceId, grantType);
-        String token2 = JwTokenGenerator.generateToken(issuer, ttl, userName, serviceId, grantType);
+        String token1 = jwTokenGeneratorService.generateToken(issuer, ttl, userName, serviceId, grantType);
+        String token2 = jwTokenGeneratorService.generateToken(issuer, ttl, userName, serviceId, grantType);
 
         assertThat(token1.length() > 200);
         assertThat(token2.length() > 200);
