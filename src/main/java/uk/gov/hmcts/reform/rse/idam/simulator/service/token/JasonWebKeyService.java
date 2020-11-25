@@ -1,10 +1,13 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.util.Base64;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKey;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKeySet;
 
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 @Component
 public class JasonWebKeyService {
@@ -19,16 +22,18 @@ public class JasonWebKeyService {
     static String x5t = "TnQ48fb5i968JO_zOG6XME3GG8E";
 
     public JsonWebKeySet getJwkConfigSet() {
+
+        RSAKey rsaKey = KeyGenUtil.getRsaJwk();
         JsonWebKeySet jsonWebKeySet = new JsonWebKeySet();
         JsonWebKey jsonWebKey = new JsonWebKey();
         jsonWebKey.setAlg(alg);
         jsonWebKey.setK(kty);
         jsonWebKey.setUse(use);
-        jsonWebKey.setKid(kid);
-        jsonWebKey.setN(n);
-        jsonWebKey.setE(e);
-        jsonWebKey.setX5c(Collections.singletonList(x5c1));
-        jsonWebKey.setX5t(x5t);
+        jsonWebKey.setKid(rsaKey.getKeyID());
+        jsonWebKey.setN(rsaKey.getModulus().toString());
+        jsonWebKey.setE(rsaKey.getPublicExponent().toString());
+//        jsonWebKey.setX5c(rsaKey.getX509CertChain().stream().map(Base64::toString).collect(Collectors.toList()));
+//        jsonWebKey.setX5t(rsaKey.getX509CertThumbprint().toString());
         jsonWebKeySet.setKeys(Collections.singletonList(jsonWebKey));
         return jsonWebKeySet;
     }
