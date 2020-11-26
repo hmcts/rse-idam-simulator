@@ -22,11 +22,13 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserAddReponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKeySet;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -46,6 +48,9 @@ public class IdamSimulatorController {
     public static final String REDIRECT_URI = "redirect_uri";
     private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
+
+    @Autowired
+    private JsonWebKeyService jsonWebKeyService;
 
     @Autowired
     private SimulatorService simulatorService;
@@ -190,6 +195,13 @@ public class IdamSimulatorController {
         LOG.info("Request Search user details with query {}", elasticSearchQuery);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         return createUserDetailsList();
+    }
+
+    @GetMapping("/o/jwks")
+    public ResponseEntity<JsonWebKeySet> getJsonWebKeySet() {
+        LOG.info("Request jwks config");
+        JsonWebKeySet  jsonWebKeySet = jsonWebKeyService.getJwkConfigSet();
+        return ResponseEntity.ok(jsonWebKeySet);
     }
 
     private IdamUserInfo toUserInfo(SimObject simObject) {
