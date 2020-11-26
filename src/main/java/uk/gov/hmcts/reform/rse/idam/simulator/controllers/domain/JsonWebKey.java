@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings({"PMD","checkstyle:MemberName","checkstyle:MethodName"})
 public class JsonWebKey {
     @JsonProperty("alg")
     private String alg = null;
@@ -202,7 +203,8 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("For an RSA private key, contains the Chinese Remainder Theorem (CRT) exponent of the first factor")
+    @ApiModelProperty("For an RSA private key, contains the Chinese Remainder Theorem (CRT) exponent "
+        + "of the first factor")
     public String getDp() {
         return this.dp;
     }
@@ -342,7 +344,8 @@ public class JsonWebKey {
     }
 
     public int hashCode() {
-        return Objects.hash(new Object[]{this.alg, this.kty, this.use, this.kid, this.n, this.e, this.x5c, this.x5t, this.crv, this.d, this.dp, this.dq, this.k, this.p, this.q, this.qi, this.x, this.y});
+        return Objects.hash(new Object[]{this.alg, this.kty, this.use, this.kid, this.n, this.e, this.x5c,
+            this.x5t, this.crv, this.d, this.dp, this.dq, this.k, this.p, this.q, this.qi, this.x, this.y});
     }
 
     public String toString() {

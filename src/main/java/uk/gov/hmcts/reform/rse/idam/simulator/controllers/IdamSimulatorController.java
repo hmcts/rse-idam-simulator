@@ -28,7 +28,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JasonWebKeyService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -50,7 +50,7 @@ public class IdamSimulatorController {
     private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
     @Autowired
-    private JasonWebKeyService jasonWebKeyService;
+    private JsonWebKeyService jsonWebKeyService;
 
     @Autowired
     private SimulatorService simulatorService;
@@ -200,7 +200,7 @@ public class IdamSimulatorController {
     @GetMapping("/o/jwks")
     public ResponseEntity<JsonWebKeySet> getJsonWebKeySet() {
         LOG.info("Request jwks config");
-        JsonWebKeySet  jsonWebKeySet = jasonWebKeyService.getJwkConfigSet();
+        JsonWebKeySet  jsonWebKeySet = jsonWebKeyService.getJwkConfigSet();
         return ResponseEntity.ok(jsonWebKeySet);
     }
 

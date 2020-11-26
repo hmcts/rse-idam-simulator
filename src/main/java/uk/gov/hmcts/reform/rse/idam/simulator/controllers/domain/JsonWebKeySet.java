@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings({"PMD"})
 public class JsonWebKeySet {
+
     @JsonProperty("keys")
     private List<JsonWebKey> keys = null;
 

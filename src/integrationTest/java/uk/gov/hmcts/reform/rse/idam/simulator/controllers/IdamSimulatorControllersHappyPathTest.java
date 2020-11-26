@@ -13,7 +13,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JasonWebKeyService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 
 import java.util.Optional;
 
@@ -51,7 +51,7 @@ public class IdamSimulatorControllersHappyPathTest {
     public static final String CLIENT_ID_HMCTS = "hmcts";
 
     @MockBean
-    JasonWebKeyService jasonWebKeyService;
+    JsonWebKeyService jsonWebKeyService;
 
     @MockBean
     SimulatorService simulatorService;
