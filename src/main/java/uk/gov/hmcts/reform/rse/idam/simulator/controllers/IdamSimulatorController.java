@@ -23,12 +23,14 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserAddRepo
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKeySet;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.OpenIdConfig;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -50,6 +52,9 @@ public class IdamSimulatorController {
     private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
     @Autowired
+    private OpenIdConfigService openIdConfigService;
+
+    @Autowired
     private JsonWebKeyService jsonWebKeyService;
 
     @Autowired
@@ -60,6 +65,15 @@ public class IdamSimulatorController {
 
     @Value("${simulator.jwt.expiration}")
     private long expiration;
+
+    @Value("${simulator.jwt.issuer}")
+    private String jwtIssuer;
+
+    @Value("${server.port}")
+    private int idamServerPort;
+
+    @Value("${simulator.openid.base-url}")
+    private String idamBaseUrl;
 
     /*
     This method is no longer acceptable as idam now uses OpenID Connect and /oauth2/authorize endpoint is deprecated.
@@ -200,8 +214,16 @@ public class IdamSimulatorController {
     @GetMapping("/o/jwks")
     public ResponseEntity<JsonWebKeySet> getJsonWebKeySet() {
         LOG.info("Request jwks config");
-        JsonWebKeySet  jsonWebKeySet = jsonWebKeyService.getJwkConfigSet();
+        JsonWebKeySet jsonWebKeySet = jsonWebKeyService.getJwkConfigSet();
         return ResponseEntity.ok(jsonWebKeySet);
+    }
+
+    @GetMapping("/o/.well-known/openid-configuration/")
+    public ResponseEntity<OpenIdConfig> getOpenIdConfig() {
+        LOG.info("Request openIdConfig");
+        OpenIdConfig openIdConfig = openIdConfigService
+            .getOpenIdConfig(idamBaseUrl, idamServerPort, jwtIssuer);
+        return ResponseEntity.ok(openIdConfig);
     }
 
     private IdamUserInfo toUserInfo(SimObject simObject) {

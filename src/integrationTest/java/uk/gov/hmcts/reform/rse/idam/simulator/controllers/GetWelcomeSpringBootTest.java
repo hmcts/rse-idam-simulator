@@ -16,6 +16,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.net.URI;
 
@@ -24,9 +25,9 @@ import static org.junit.Assert.assertTrue;
 
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class, LiveMemoryService.class,
-    SimulatorService.class, JsonWebKeyService.class, JwTokenGeneratorService.class},
+    SimulatorService.class, JsonWebKeyService.class, JwTokenGeneratorService.class, OpenIdConfigService.class},
      webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.yaml")
 @EnableAutoConfiguration
 @RunWith(SpringRunner.class)
 public class GetWelcomeSpringBootTest {
