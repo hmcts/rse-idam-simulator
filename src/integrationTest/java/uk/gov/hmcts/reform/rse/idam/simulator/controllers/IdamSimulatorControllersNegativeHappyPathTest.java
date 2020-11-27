@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -22,6 +23,9 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
 
     public static final String AUTHORIZATION = "authorization";
     public static final String VALIDE_CODE = "123456";
+
+    @MockBean
+    OpenIdConfigService openIdConfigService;
 
     @MockBean
     JsonWebKeyService jsonWebKeyService;

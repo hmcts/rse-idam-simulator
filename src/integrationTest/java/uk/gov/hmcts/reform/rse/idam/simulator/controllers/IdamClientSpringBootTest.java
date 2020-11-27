@@ -31,6 +31,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -55,10 +56,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.JUnitAssertionsShouldIncludeMessage",
     "PMD.JUnitTestsShouldIncludeAssert", "PMD.LawOfDemeter", "PMD.ExcessiveImports"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
-@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
-    LiveMemoryService.class, SimulatorService.class, JsonWebKeyService.class, JwTokenGeneratorService.class},
+@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class, LiveMemoryService.class,
+    SimulatorService.class, JsonWebKeyService.class, JwTokenGeneratorService.class, OpenIdConfigService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.yaml")
 @EnableAutoConfiguration
 @RunWith(SpringRunner.class)
 public class IdamClientSpringBootTest {
