@@ -86,7 +86,7 @@ public class OpenIdConfigService {
             .tokenEndpoint(basePath + "/o/token")
             .userinfoEndpoint(basePath + "/o/userinfo")
             .jwksUri(basePath + "/o/jwks")
-            .issuer(basePath)
+            .issuer(basePath + "/o")
             .endSessionEndpoint(basePath + "/o/endSession")
             .checkSessionIframe(null)
             .introspectionEndpoint(null)

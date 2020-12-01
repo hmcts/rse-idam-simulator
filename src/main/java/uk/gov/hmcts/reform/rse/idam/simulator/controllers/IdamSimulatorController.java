@@ -218,7 +218,7 @@ public class IdamSimulatorController {
         return ResponseEntity.ok(jsonWebKeySet);
     }
 
-    @GetMapping("/o/.well-known/openid-configuration/")
+    @GetMapping("/o/.well-known/openid-configuration")
     public ResponseEntity<OpenIdConfig> getOpenIdConfig() {
         LOG.info("Request openIdConfig");
         OpenIdConfig openIdConfig = openIdConfigService
