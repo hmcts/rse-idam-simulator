@@ -30,7 +30,7 @@ public class JsonWebKeyService {
     public final JsonWebKeySet generateNewJwkConfigSet(RSAKey rsaKey) {
         JsonWebKey jsonWebKey = new JsonWebKey();
         jsonWebKey.setAlg("RS256");
-        jsonWebKey.setK("RSA");
+        jsonWebKey.setKty("RSA");
         jsonWebKey.setUse("sig");
         jsonWebKey.setKid(rsaKey.getKeyID());
         jsonWebKey.setN(rsaKey.getModulus().toString());
