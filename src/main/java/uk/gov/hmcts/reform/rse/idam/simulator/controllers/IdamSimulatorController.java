@@ -233,7 +233,8 @@ public class IdamSimulatorController {
         idamUserInfo.setUid(simObject.getId());
         idamUserInfo.setName(simObject.getForename() + " " + simObject.getSurname());
         idamUserInfo.setEmail(simObject.getEmail());
-        idamUserInfo.setSub(simObject.getSub());
+        // sub is an email in OpenId standard
+        idamUserInfo.setSub(simObject.getEmail());
         idamUserInfo.setRoles(simObject.getRoles());
         return idamUserInfo;
     }
