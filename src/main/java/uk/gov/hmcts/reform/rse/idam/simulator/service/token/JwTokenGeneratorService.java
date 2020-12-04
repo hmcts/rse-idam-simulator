@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -13,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.UUID;
+
+import static com.google.common.collect.Lists.newArrayList;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI"})
 @Component
@@ -26,16 +30,26 @@ public class JwTokenGeneratorService {
     public String generateToken(String issuer, long ttlMillis, String userName,
                                              String serviceId, String grantType) {
 
+        Date authTime = new Date();
+
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
             .subject("RSE-Idam-Simulator")
-            .issueTime(new Date())
+            .jwtID(UUID.randomUUID().toString())
+            .issueTime(authTime)
+            .notBeforeTime(authTime)
             .issuer(issuer)
             .claim("token_type", "Bearer")
             .claim("aud", serviceId)
             .claim("sub", userName)
             .claim("grant_type", grantType)
             .claim("realm", "/hmcts")
-            .claim("tokenName", "access_token");
+            .claim("tokenName", "access_token")
+            .claim("authGrantId", UUID.randomUUID().toString())
+            .claim("auditTrackingId", UUID.randomUUID().toString())
+            .claim("auth_level", 0)
+            .claim("auth_time", authTime.getTime())
+            .claim("scope", newArrayList("openid", "profile", "roles"))
+            .claim("expires_in", ttlMillis / 1000);
 
         if (ttlMillis >= 0) {
             long expMillis = System.currentTimeMillis() + ttlMillis;
@@ -46,7 +60,10 @@ public class JwTokenGeneratorService {
         RSAKey rsaJwk1 = jsonWebKeyService.getRsaKey();
 
         JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.RS256)
-            .keyID(rsaJwk1.getKeyID()).build();
+            .keyID(rsaJwk1.getKeyID())
+            .type(JOSEObjectType.JWT)
+            .customParam("zip", "NONE")
+            .build();
 
         SignedJWT signedJwt = new SignedJWT(
             jwsHeader,
