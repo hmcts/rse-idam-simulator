@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 
+import com.microsoft.applicationinsights.boot.dependencies.apachecommons.codec.binary.Base64;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
@@ -45,7 +46,7 @@ public class JsonWebKeyService {
         try {
             synchronized (this) {
                 RSAKey rsaJwk = new RSAKeyGenerator(2048)
-                    .keyID(Long.toString(System.nanoTime()))
+                    .keyID(Base64.encodeBase64String(Long.toString(System.nanoTime()).getBytes()))
                     .generate();
 
                 LOG.info("New Idam Simulator RSA Key generated: {}", rsaJwk.toString());
