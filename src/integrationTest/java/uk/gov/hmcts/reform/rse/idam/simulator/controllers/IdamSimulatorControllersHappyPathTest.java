@@ -200,7 +200,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.email").value(TEST_EMAIL_HMCTS_NET))
             .andExpect(jsonPath("$.given_name").value(JOHN))
             .andExpect(jsonPath("$.family_name").value(SMITH))
-            .andExpect(jsonPath("$.sub").value("oneSub"))
+            .andExpect(jsonPath("$.sub").value(TEST_EMAIL_HMCTS_NET))
             .andExpect(jsonPath("$.roles[0]").value(ROLE_1))
             .andExpect(jsonPath("$.roles[1]").value(ROLE_2))
             .andReturn();
