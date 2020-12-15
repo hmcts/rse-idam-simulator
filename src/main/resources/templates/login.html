@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>  RSE Idam Simulator Login Form </title>
+</head>
+<body>
+<center> <h1> RSE Idam Simulator Login Form </h1> </center>
+<form action="/o/authorize">
+  <div class="container">
+    <label>Username : </label>
+    <input type="text" placeholder="Enter Username" name="username" id="username">
+    <label>Password : </label>
+    <input type="password" placeholder="Enter Password" name="password" id="password">
+    <button type="submit" name="save">Sign in</button>
+  </div>
+</form>
+</body>
+</html>
+
+<!--            <c:set var="azureLoginUrl">
+                <spring:url value="/o/authorize">
+                    <spring:param name="redirect_uri" value="${redirect_uri}"/>
+                    <spring:param name="client_id" value="${client_id}"/>
+                    <spring:param name="state" value="${state}"/>
+                    <spring:param name="nonce" value="${nonce}"/>
+                    <spring:param name="prompt" value="${prompt}"/>
+                    <spring:param name="scope" value="${scope}"/>
+                    <spring:param name="response_type" value="code"/>
+                    <spring:param name="login_hint" value="ejudiciary-aad"/>
+                </spring:url>
+            </c:set>-->
+
