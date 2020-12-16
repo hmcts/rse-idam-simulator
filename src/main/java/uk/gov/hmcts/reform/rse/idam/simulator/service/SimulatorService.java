@@ -117,8 +117,13 @@ public class SimulatorService {
     }
 
     private String generateNewCode(Optional<SimObject> userInMemory) {
-        String newCode = generateRandomAlphanumeric(AUTH_CODE_LENGTH);
+        String newCode = getNewAuthCode();
         userInMemory.get().setMostRecentCode(newCode);
+        return newCode;
+    }
+
+    public String getNewAuthCode() {
+        String newCode =  generateRandomAlphanumeric(AUTH_CODE_LENGTH);
         LOG.info("Oauth2 new code generated {}", newCode);
         return newCode;
     }

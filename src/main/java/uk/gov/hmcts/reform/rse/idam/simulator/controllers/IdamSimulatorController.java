@@ -140,26 +140,6 @@ public class IdamSimulatorController {
         }
     }
 
-    @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
-                                        @RequestParam(REDIRECT_URI) final String redirectUri,
-                                        @RequestParam("client_secret") final String clientSecret,
-                                        @RequestParam("grant_type") final String grantType,
-                                        @RequestParam("username") final String username,
-                                        @RequestParam("password") final String password,
-                                        @RequestParam("scope") final String scope) {
-        LOG.info("Request OpenId Token for clientId {} Username {} and scope {}", clientId, username, scope);
-
-        String token = simulatorService.generateAToken(username, clientId, grantType);
-        String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
-        String idToken = simulatorService.generateAToken(username, clientId, grantType);
-        LOG.info("Access Open Id Token Generated {}", token);
-        simulatorService.updateTokenInUser(username, token);
-        return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
-                                 "openid profile roles", "Bearer"
-        );
-    }
-
     @PostMapping("/pin")
     public PinDetails postPin(@RequestBody GeneratePinRequest request) {
         LOG.info("Post Request Pin for {}", request.getFirstName());
@@ -174,7 +154,7 @@ public class IdamSimulatorController {
         LOG.info("Get Request Pin for pin {} to generate new code in Location Header", pin);
         HttpHeaders httpHeaders = new HttpHeaders();
         String generatedPinCode = simulatorService.generateOauth2CodeFromPin(pin);
-        httpHeaders.add("Location", "http://somewebsite.co.uk?code=" + generatedPinCode);
+        httpHeaders.add("Location", redirectUri+"?code=" + generatedPinCode);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
@@ -183,13 +163,6 @@ public class IdamSimulatorController {
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
         return toUserDetails(simObject);
-    }
-
-    @GetMapping("/o/userinfo")
-    public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
-        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
-        return toUserInfo(simObject);
     }
 
     @GetMapping("/api/v1/users/{userId}")
@@ -211,6 +184,33 @@ public class IdamSimulatorController {
         return createUserDetailsList();
     }
 
+    @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
+                                        @RequestParam(REDIRECT_URI) final String redirectUri,
+                                        @RequestParam("client_secret") final String clientSecret,
+                                        @RequestParam("grant_type") final String grantType,
+                                        @RequestParam("username") final String username,
+                                        @RequestParam("password") final String password,
+                                        @RequestParam("scope") final String scope,
+                                        @RequestParam("code") final String code) {
+        LOG.info("Request OpenId Token for clientId {} Username {} scope {} and code {}", clientId, username, scope, code);
+        String token = simulatorService.generateAToken(username, clientId, grantType);
+        String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
+        String idToken = simulatorService.generateAToken(username, clientId, grantType);
+        LOG.info("Access Open Id Token Generated {}", token);
+        simulatorService.updateTokenInUser(username, token);
+        return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
+                                 "openid profile roles", "Bearer"
+        );
+    }
+
+    @GetMapping("/o/userinfo")
+    public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
+        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        return toUserInfo(simObject);
+    }
+
     @GetMapping("/o/jwks")
     public ResponseEntity<JsonWebKeySet> getJsonWebKeySet() {
         LOG.info("Request jwks config");
@@ -224,6 +224,31 @@ public class IdamSimulatorController {
         OpenIdConfig openIdConfig = openIdConfigService
             .getOpenIdConfig(idamBaseUrl, idamServerPort, jwtIssuer);
         return ResponseEntity.ok(openIdConfig);
+    }
+
+    @PostMapping(value = "/o/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<Object> postoAutorize(
+        @RequestParam(value = "client_id",required = false) String clientId,
+        @RequestParam(value = "redirect_uri",required = false) String redirectUri,
+        @RequestParam(value = "state",required = false) String state,
+        @RequestParam(value = "nonce",required = false) String nonce,
+        @RequestParam(value = "response_type",required = false) String responseType,
+        @RequestParam(value = "response_mode",required = false) String responseMode,
+        @RequestParam(value = "display",required = false) String display,
+        @RequestParam(value = "prompt",required = false) String prompt,
+        @RequestParam(value = "max_age",required = false) String maxAge,
+        @RequestParam(value = "acr_values",required = false) String acrValues,
+        @RequestParam(value = "id_token_hint",required = false) String idTokenHint,
+        @RequestParam(value = "login_hint",required = false) String loginHint) {
+
+        authoriseUser(null, clientId, redirectUri, responseType);
+
+        LOG.info("Request OpenId Connect Code for clientId {}", clientId);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        String generatedCode = simulatorService.getNewAuthCode();
+        httpHeaders.add("Location", redirectUri+"?code=" + generatedCode);
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
     private IdamUserInfo toUserInfo(SimObject simObject) {
