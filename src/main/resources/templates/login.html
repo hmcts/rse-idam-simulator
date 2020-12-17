@@ -6,13 +6,14 @@
 </head>
 <body>
 <center> <h1> RSE Idam Simulator Login Form </h1> </center>
-<form action="/o/authorize">
+<form  action="#" th:action="${loginFormAction}"  method="post">
   <div class="container">
     <label>Username : </label>
     <input type="text" placeholder="Enter Username" name="username" id="username">
     <label>Password : </label>
     <input type="password" placeholder="Enter Password" name="password" id="password">
     <button type="submit" name="save">Sign in</button>
+    <p th:text="'Hello, ' + ${loginFormAction} + '!'" />
   </div>
 </form>
 </body>

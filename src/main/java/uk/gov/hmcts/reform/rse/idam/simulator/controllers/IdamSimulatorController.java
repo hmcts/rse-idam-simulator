@@ -154,7 +154,7 @@ public class IdamSimulatorController {
         LOG.info("Get Request Pin for pin {} to generate new code in Location Header", pin);
         HttpHeaders httpHeaders = new HttpHeaders();
         String generatedPinCode = simulatorService.generateOauth2CodeFromPin(pin);
-        httpHeaders.add("Location", redirectUri+"?code=" + generatedPinCode);
+        httpHeaders.add("Location", redirectUri + "?code=" + generatedPinCode);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
@@ -193,7 +193,13 @@ public class IdamSimulatorController {
                                         @RequestParam("password") final String password,
                                         @RequestParam("scope") final String scope,
                                         @RequestParam("code") final String code) {
-        LOG.info("Request OpenId Token for clientId {} Username {} scope {} and code {}", clientId, username, scope, code);
+        LOG.info(
+            "Request OpenId Token for clientId {} Username {} scope {} and code {}",
+            clientId,
+            username,
+            scope,
+            code
+        );
         String token = simulatorService.generateAToken(username, clientId, grantType);
         String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
         String idToken = simulatorService.generateAToken(username, clientId, grantType);
@@ -228,26 +234,24 @@ public class IdamSimulatorController {
 
     @PostMapping(value = "/o/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Object> postoAutorize(
-        @RequestParam(value = "client_id",required = false) String clientId,
-        @RequestParam(value = "redirect_uri",required = false) String redirectUri,
-        @RequestParam(value = "state",required = false) String state,
-        @RequestParam(value = "nonce",required = false) String nonce,
-        @RequestParam(value = "response_type",required = false) String responseType,
-        @RequestParam(value = "response_mode",required = false) String responseMode,
-        @RequestParam(value = "display",required = false) String display,
-        @RequestParam(value = "prompt",required = false) String prompt,
-        @RequestParam(value = "max_age",required = false) String maxAge,
-        @RequestParam(value = "acr_values",required = false) String acrValues,
-        @RequestParam(value = "id_token_hint",required = false) String idTokenHint,
-        @RequestParam(value = "login_hint",required = false) String loginHint) {
-
-        authoriseUser(null, clientId, redirectUri, responseType);
+        @RequestParam(value = "client_id", required = false) String clientId,
+        @RequestParam(value = "redirect_uri", required = false) String redirectUri,
+        @RequestParam(value = "state", required = false) String state,
+        @RequestParam(value = "nonce", required = false) String nonce,
+        @RequestParam(value = "response_type", required = false) String responseType,
+        @RequestParam(value = "response_mode", required = false) String responseMode,
+        @RequestParam(value = "display", required = false) String display,
+        @RequestParam(value = "prompt", required = false) String prompt,
+        @RequestParam(value = "max_age", required = false) String maxAge,
+        @RequestParam(value = "acr_values", required = false) String acrValues,
+        @RequestParam(value = "id_token_hint", required = false) String idTokenHint,
+        @RequestParam(value = "login_hint", required = false) String loginHint) {
 
         LOG.info("Request OpenId Connect Code for clientId {}", clientId);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         String generatedCode = simulatorService.getNewAuthCode();
-        httpHeaders.add("Location", redirectUri+"?code=" + generatedCode);
+        httpHeaders.add("Location", redirectUri + "?code=" + generatedCode);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
