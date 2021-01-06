@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static uk.gov.hmcts.reform.rse.idam.simulator.controllers.SimulatorDataFactory.getUserOne;
+import static uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorDataFactory.getUserOne;
 
 @SuppressWarnings({"PMD.ExcessiveImports",
     "PMD.UseObjectForClearerAPI"})

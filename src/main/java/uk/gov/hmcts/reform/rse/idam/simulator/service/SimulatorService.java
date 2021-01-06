@@ -39,9 +39,10 @@ public class SimulatorService {
 
     public String generateAuthTokenFromCode(String code, String serviceId, String grantType) {
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
-        String token = generateAToken(userInMemory.get().getEmail(), serviceId,grantType);
+        String token = generateAToken(userInMemory.get().getEmail(), serviceId, grantType);
         LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
         if (userInMemory.isEmpty()) {
+            LOG.warn("No User for this code " + code);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: No User for this code " + code);
         }
         return token;
@@ -64,6 +65,7 @@ public class SimulatorService {
     public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
         Optional<SimObject> userInMemory = liveMemoryService.getByEmail(username);
         if (userInMemory.isEmpty()) {
+            LOG.warn("User " + username + " not exiting");
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "Idam Simulator: User " + username + " not exiting"
@@ -75,6 +77,7 @@ public class SimulatorService {
     public Optional<SimObject> checkUserInMemoryNotEmptyByPin(String pin) {
         Optional<SimObject> userInMemory = liveMemoryService.getByPin(pin);
         if (userInMemory.isEmpty()) {
+            LOG.warn("User with pin " + pin + " not found");
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "Idam Simulator: User with pin " + pin + " not found"
@@ -109,9 +112,11 @@ public class SimulatorService {
 
     public void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
         if (!authorization.startsWith(BEARER_)) {
+            LOG.warn("Bearer must start by Bearer");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
         }
         if (liveMemoryService.getByBearerToken(authorization).isEmpty()) {
+            LOG.warn("User not authenticated");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
         }
     }
@@ -122,8 +127,17 @@ public class SimulatorService {
         return newCode;
     }
 
+    public String geAuthCodeFromUserName(String email) {
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
+        String mostRecentCode = userInMemory.get().getMostRecentCode();
+        if (mostRecentCode == null || mostRecentCode.isEmpty()) {
+            mostRecentCode = generateNewCode(userInMemory);
+        }
+        return mostRecentCode;
+    }
+
     public String getNewAuthCode() {
-        String newCode =  generateRandomAlphanumeric(AUTH_CODE_LENGTH);
+        String newCode = generateRandomAlphanumeric(AUTH_CODE_LENGTH);
         LOG.info("Oauth2 new code generated {}", newCode);
         return newCode;
     }
@@ -150,4 +164,9 @@ public class SimulatorService {
             .toString();
     }
 
+    public String getNewIdamSessionValue() {
+        String newIdamSession = generateRandomAlphanumeric(64);
+        LOG.info("New Idam Session Value generated {}", newIdamSession);
+        return newIdamSession;
+    }
 }

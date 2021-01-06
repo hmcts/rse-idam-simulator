@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorDataFactory;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
