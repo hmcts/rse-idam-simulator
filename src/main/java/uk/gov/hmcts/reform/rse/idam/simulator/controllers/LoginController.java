@@ -19,8 +19,7 @@ import java.util.List;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
-
-
+@SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.DataflowAnomalyAnalysis"})
 @Controller
 public class LoginController {
 
@@ -52,7 +51,7 @@ public class LoginController {
         return "login";
     }
 
-    @PostMapping(value = "/login")
+    @PostMapping("/login")
     public ResponseEntity<Object> postLogin(HttpServletRequest request,
                                             // Required to not have redirect_uri value overwritten by the framework,
                                             @RequestParam("password") String password,
@@ -97,10 +96,9 @@ public class LoginController {
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
-    //clean code
-    //update read me with an example
-    //test the read me
-    //merge it
-    //Ask someone to use it
+    update read me with an example
+    test the read me
+    merge it
+    Ask someone to use it
 
 }

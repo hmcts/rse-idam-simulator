@@ -41,7 +41,9 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorDataFactory.getUserOne;
 
 @SuppressWarnings({"PMD.ExcessiveImports",
-    "PMD.UseObjectForClearerAPI"})
+    "PMD.UseObjectForClearerAPI",
+    "PMD.TooManyMethods",
+    "PMD.ExcessiveParameterList"})
 @RestController
 public class IdamSimulatorController {
 
@@ -192,7 +194,7 @@ public class IdamSimulatorController {
                                         @RequestParam("username") final String username,
                                         @RequestParam("password") final String password,
                                         @RequestParam("scope") final String scope,
-                                        @RequestParam("code") final String code) {
+                                        @RequestParam(name = "code", required = false) final String code) {
         LOG.info(
             "Request OpenId Token for clientId {} Username {} scope {} and code {}",
             clientId,
