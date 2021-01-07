@@ -56,8 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.JUnitAssertionsShouldIncludeMessage",
     "PMD.JUnitTestsShouldIncludeAssert", "PMD.LawOfDemeter", "PMD.ExcessiveImports"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
-@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class, LiveMemoryService.class,
-    SimulatorService.class, JsonWebKeyService.class, JwTokenGeneratorService.class, OpenIdConfigService.class},
+@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
+    LiveMemoryService.class, SimulatorService.class, JsonWebKeyService.class,
+    JwTokenGeneratorService.class, OpenIdConfigService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yaml")
 @EnableAutoConfiguration

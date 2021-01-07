@@ -2,9 +2,11 @@
 
 [![Build Status](https://travis-ci.org/hmcts/spring-boot-template.svg?branch=master)](https://travis-ci.org/hmcts/spring-boot-template)
 
-The Idam Simulator is a small spring app that stub only the endpoints of Idam Api required to request a Bearer Token.
+The Idam Simulator is a small spring app that stub only the endpoints of Idam Api required to request a Bearer Token and login.
 
-Any call made by Idam Client are correctly handled by the Idam Simulator. It can be run from a docker image or from IntelliJ (so with debugger potentially).
+Any call made by Idam Client are correctly handled by the Idam Simulator. The call from XUI for login and redirection is also handled.
+
+It can be run from a docker image or from IntelliJ (so with debugger potentially).
 
 
 ## How to pull an image from acr of the simulator and run it with docker
@@ -59,6 +61,18 @@ scope: openid profile roles
 Do same operation than above but using these swaggers endpoints from any browser:
 - http://localhost:5556/swagger-ui.html#/idam-simulator-controller/addNewUserUsingPOST
 - http://localhost:5556/swagger-ui.html#/idam-simulator-controller/getOpenIdTokenUsingPOST
+
+## How to login and have a session cookie like ExUI does?
+- start the application and add an user like explain in **How to use the simulator with Post Man** above section
+- Let's say we have added the user myemail-test@hmcts.net and after login we want to be redirected to https://www.gov.uk
+- Use any browser to login by an url similar to this one
+```
+http://localhost:5556/login?redirect_uri=https%3A%2F%2Fwww.gov.uk&client_id=oneClientId&state=12345&ui_local=en
+```
+- Login with user myemail-test@hmcts.net
+- After login the response is redirected to https://www.gov.uk/?code=lBApYbFkrfLOsKtgkYRwAcACisa&state=12345&client_id=oneClientId&iss=http://fr-am:8080/openam/oauth2/hmcts
+- This response contains 2 idam cookies: Idam.Session and idam_ui_local
+
 
 ## Building the application
 
