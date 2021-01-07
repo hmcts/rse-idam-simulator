@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.DataflowAnomalyAnalysis"})
 @Controller
-public class LoginController {
+public class  LoginController {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
 
@@ -95,10 +95,5 @@ public class LoginController {
         LOG.info("Location " + locationValue);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
-
-    update read me with an example
-    test the read me
-    merge it
-    Ask someone to use it
 
 }
