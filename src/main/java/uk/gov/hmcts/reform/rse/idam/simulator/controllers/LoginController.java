@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
@@ -39,7 +41,7 @@ public class  LoginController {
                             @RequestParam("redirect_uri") String redirectUri,
                             @RequestParam("client_id") String clientId,
                             @RequestParam("state") String state,
-                            @RequestParam("ui_local") String uiLocal) {
+                            @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
         String loginFormAction = "/login?"
             + "client_id=" + clientId
             + "&redirect_uri=" + redirectUri
@@ -60,7 +62,7 @@ public class  LoginController {
                                             @RequestParam("client_id") String clientId,
                                             @RequestParam("state") String state,
                                             @RequestParam("response_type") String responseType,
-                                            @RequestParam("ui_local") String uiLocal
+                                            @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal
     ) {
         LOG.info(
             "Post login with values state: {} redirect_uri: {} response_type: {} client_id: {} username: {}",
@@ -94,6 +96,13 @@ public class  LoginController {
         httpHeaders.add("Location", locationValue);
         LOG.info("Location " + locationValue);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    @DeleteMapping("/session/{access_token}")
+    public ResponseEntity<Object> logout(@PathVariable("access_token") String accessToken) {
+
+        LOG.info("Logout action for token: {}", accessToken);
+        return ResponseEntity.noContent().build();
     }
 
 }
