@@ -99,7 +99,7 @@ public class  LoginController {
     }
 
     @DeleteMapping("/session/{access_token}")
-    public ResponseEntity<Object> logout(@PathVariable(value = "access_token") String accessToken) {
+    public ResponseEntity<Object> logout(@PathVariable("access_token") String accessToken) {
 
         LOG.info("Logout action for token: {}", accessToken);
         return ResponseEntity.noContent().build();
