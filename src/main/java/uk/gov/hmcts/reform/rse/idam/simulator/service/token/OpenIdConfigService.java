@@ -16,10 +16,9 @@ public class OpenIdConfigService {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenIdConfigService.class);
 
-    public OpenIdConfig getOpenIdConfig(String baseUrl, int serverPort, String issuer) {
+    public OpenIdConfig getOpenIdConfig(String baseUrl, String issuer) {
         OpenIdConfig openIdConfig = new OpenIdConfig();
-        String basePath = baseUrl.concat(":" + serverPort);
-        openIdConfig.authorizationEndpoint(basePath + "/o/authorize")
+        openIdConfig.authorizationEndpoint(baseUrl + "/o/authorize")
             .requestParameterSupported(true)
             .claimsParameterSupported(true)
             .scopesSupported(Arrays.asList("openid", "profile", "roles"))
@@ -83,11 +82,11 @@ public class OpenIdConfigService {
             ))
             .rcsResponseEncryptionEncValuesSupported(Arrays.asList("A256GCM", "A128CBC-HS256", "A256CBC-HS512"))
             .issuer(issuer)
-            .tokenEndpoint(basePath + "/o/token")
-            .userinfoEndpoint(basePath + "/o/userinfo")
-            .jwksUri(basePath + "/o/jwks")
-            .issuer(basePath + "/o")
-            .endSessionEndpoint(basePath + "/o/endSession")
+            .tokenEndpoint(baseUrl + "/o/token")
+            .userinfoEndpoint(baseUrl + "/o/userinfo")
+            .jwksUri(baseUrl + "/o/jwks")
+            .issuer(baseUrl + "/o")
+            .endSessionEndpoint(baseUrl + "/o/endSession")
             .checkSessionIframe(null)
             .introspectionEndpoint(null)
             .registrationEndpoint(null);

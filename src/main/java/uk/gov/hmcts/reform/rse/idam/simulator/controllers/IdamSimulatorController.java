@@ -71,9 +71,6 @@ public class IdamSimulatorController {
     @Value("${simulator.jwt.issuer}")
     private String jwtIssuer;
 
-    @Value("${server.port}")
-    private int idamServerPort;
-
     @Value("${simulator.openid.base-url}")
     private String idamBaseUrl;
 
@@ -230,7 +227,7 @@ public class IdamSimulatorController {
     public ResponseEntity<OpenIdConfig> getOpenIdConfig() {
         LOG.info("Request openIdConfig");
         OpenIdConfig openIdConfig = openIdConfigService
-            .getOpenIdConfig(idamBaseUrl, idamServerPort, jwtIssuer);
+            .getOpenIdConfig(idamBaseUrl, jwtIssuer);
         return ResponseEntity.ok(openIdConfig);
     }
 

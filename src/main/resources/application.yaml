@@ -16,7 +16,7 @@ simulator:
     issuer: http://localhost:5556
     expiration: 14400000 # milliseconds 4 hours
   openid:
-    base-url: http://localhost
+    base-url: http://localhost:5556
 
 logging:
   level:
