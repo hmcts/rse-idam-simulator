@@ -9,7 +9,7 @@ public class IdamTestingUser {
     private String password;
     private String forename;
     private String surname;
-    private List<String> roles = Collections.emptyList();
+    private List<RoleDetails> roles = Collections.emptyList();
 
     public String getPassword() {
         return password;
@@ -35,11 +35,11 @@ public class IdamTestingUser {
         this.surname = surname;
     }
 
-    public List<String> getRoles() {
+    public List<RoleDetails> getRoles() {
         return this.roles;
     }
 
-    public void setRoles(List<String> roles) {
+    public void setRoles(List<RoleDetails> roles) {
         this.roles = roles;
     }
 

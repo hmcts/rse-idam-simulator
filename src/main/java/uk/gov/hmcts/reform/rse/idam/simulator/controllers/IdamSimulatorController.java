@@ -25,6 +25,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKeySet;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.OpenIdConfig;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
@@ -36,6 +37,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorDataFactory.getUserOne;
@@ -302,7 +304,7 @@ public class IdamSimulatorController {
             .surname(request.getSurname())
             .forename(request.getForename())
             .id(userId)
-            .roles(request.getRoles())
+            .roles(request.getRoles().stream().map(RoleDetails::getCode).collect(Collectors.toList()))
             .build());
         return new IdamUserAddReponse(userId);
     }

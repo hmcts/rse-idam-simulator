@@ -27,6 +27,7 @@ import uk.gov.hmcts.reform.idam.client.models.UserDetails;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
@@ -34,9 +35,10 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorServ
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -196,7 +198,7 @@ public class IdamClientSpringBootTest {
     @Test
     public void exchangeCode() throws UnsupportedEncodingException {
 
-        GeneratePinRequest pinRequest  = GeneratePinRequest.builder()
+        GeneratePinRequest pinRequest = GeneratePinRequest.builder()
             .firstName(BILLY).lastName(THE_KID)
             .build();
         GeneratePinResponse generatePinResponse = idamClient.generatePin(pinRequest, accessToken);
@@ -257,7 +259,7 @@ public class IdamClientSpringBootTest {
         idamTestingUser.setEmail(email);
         idamTestingUser.setForename(forename);
         idamTestingUser.setSurname(surename);
-        idamTestingUser.setRoles(Arrays.asList("role1", "role2"));
+        idamTestingUser.setRoles(Stream.of("role1", "role2").map(RoleDetails::build).collect(Collectors.toList()));
         idamTestingUser.setPassword("OnePassword");
 
         String postForObject = restTemplate.postForObject(uri, idamTestingUser, String.class);
@@ -265,13 +267,13 @@ public class IdamClientSpringBootTest {
         String userUuid = extractUserUid(postForObject);
 
         IdamUserInfo idamUserInfo = new IdamUserInfo();
-        idamUserInfo.setRoles(idamTestingUser.getRoles());
+        idamUserInfo.setRoles(idamTestingUser.getRoles().stream().map(RoleDetails::getCode)
+                                  .collect(Collectors.toList()));
         idamUserInfo.setEmail(idamTestingUser.getEmail());
         idamUserInfo.setFamilyName(idamTestingUser.getSurname());
         idamUserInfo.setGivenName(idamTestingUser.getForename());
         idamUserInfo.setUid(userUuid);
         idamUserInfo.setSub(idamTestingUser.getEmail());
-        idamUserInfo.setRoles(idamTestingUser.getRoles());
         return idamUserInfo;
     }
 
