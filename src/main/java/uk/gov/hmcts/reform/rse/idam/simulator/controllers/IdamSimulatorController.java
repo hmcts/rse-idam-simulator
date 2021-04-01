@@ -214,7 +214,7 @@ public class IdamSimulatorController {
 
     @GetMapping("/o/userinfo")
     public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
-        LOG.info("Request o/userinfo {}", authorization);
+        LOG.info("Request o/userinfo with authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
         return toUserInfo(simObject);
