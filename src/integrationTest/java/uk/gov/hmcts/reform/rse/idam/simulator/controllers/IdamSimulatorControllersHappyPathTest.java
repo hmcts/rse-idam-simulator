@@ -146,7 +146,7 @@ public class IdamSimulatorControllersHappyPathTest {
 
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                            .param("grant_type", "client_credentials")
+                            .param("grant_type", "authorization_code")
                             .param(REDIRECT_URI, "aRedirectUrl")
                             .param(CLIENT_ID, CLIENT_ID_HMCTS)
                             .param("code", "123456")
