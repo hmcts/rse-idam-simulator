@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTTokenGeneratorService;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -21,12 +21,11 @@ import java.util.Random;
 public class SimulatorService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulatorService.class);
-    public static final String BEARER_ = "Bearer ";
     public static final int PIN_LENGTH = 8;
     public static final int AUTH_CODE_LENGTH = 27;
 
     @Autowired
-    private JwTokenGeneratorService jwTokenGenerator;
+    private JwTTokenGeneratorService jwTokenGenerator;
 
     @Autowired
     private LiveMemoryService liveMemoryService;
@@ -35,7 +34,7 @@ public class SimulatorService {
     private String issuer;
 
     @Value("${simulator.jwt.expiration}")
-    private long expiration;
+    private long tokenExpirationMs;
 
     public String generateAuthTokenFromCode(String code, String serviceId, String grantType) {
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
@@ -49,17 +48,30 @@ public class SimulatorService {
     }
 
     public String generateAToken(String userName, String clientID, String grantType) {
-        return jwTokenGenerator.generateToken(issuer, expiration, userName, clientID, grantType);
+        return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
+    }
+
+    public String generateACachedToken(String userName, String clientID, String grantType) {
+        Boolean tokenExpired = liveMemoryService.getByEmail(userName).stream()
+            .map(SimObject::getMostRecentJwTokenUnixTime)
+            .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst().get();
+
+        if (tokenExpired || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
+            LOG.info("Token not existing or expired and will be regenerated");
+            return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
+        }
+        LOG.info("Use token in cache");
+        return liveMemoryService.getByEmail(userName).get().getMostRecentJwToken();
     }
 
     public void updateTokenInUser(String username, String token) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
-        userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
+        userInMemory.get().setMostRecentJwToken(token);
     }
 
     public void updateTokenInUserFromCode(String code, String token) {
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
-        userInMemory.get().setMostRecentBearerToken(BEARER_ + token);
+        userInMemory.get().setMostRecentJwToken(token);
     }
 
     public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
@@ -111,11 +123,11 @@ public class SimulatorService {
     }
 
     public void checkUserHasBeenAuthenticateByBearerToken(String authorization) {
-        if (!authorization.startsWith(BEARER_)) {
+        if (!authorization.startsWith(SimObject.BEARER_)) {
             LOG.warn("Bearer must start by Bearer");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
         }
-        if (liveMemoryService.getByBearerToken(authorization).isEmpty()) {
+        if (liveMemoryService.getByJwToken(authorization).isEmpty()) {
             LOG.warn("User not authenticated");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
         }

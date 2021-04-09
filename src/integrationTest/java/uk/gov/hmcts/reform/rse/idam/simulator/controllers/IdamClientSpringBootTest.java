@@ -31,7 +31,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTTokenGeneratorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.io.UnsupportedEncodingException;
@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
     LiveMemoryService.class, SimulatorService.class, JsonWebKeyService.class,
-    JwTokenGeneratorService.class, OpenIdConfigService.class},
+    JwTTokenGeneratorService.class, OpenIdConfigService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yaml")
 @EnableAutoConfiguration
@@ -157,11 +157,18 @@ public class IdamClientSpringBootTest {
             MYEMAIL_HMCTSTEST_NET,
             "somePassword"
         );
-        assertEquals(tokenResponse.expiresIn, "14400000");
+        assertEquals(tokenResponse.expiresIn, "28800000");
         assertEquals(tokenResponse.scope, "openid profile roles");
         assertEquals(tokenResponse.tokenType, "Bearer");
         assertNotNull(tokenResponse.accessToken);
         assertTrue(tokenResponse.accessToken.length() >= BEARER_SIZE);
+
+        //Token should be keep in cache until expiration
+        TokenResponse tokenResponse2 = idamClient.getAccessTokenResponse(
+            MYEMAIL_HMCTSTEST_NET,
+            "somePassword"
+        );
+        assertEquals(tokenResponse.accessToken, tokenResponse2.accessToken, "Tokens should be the same");
     }
 
     @Test

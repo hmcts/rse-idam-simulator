@@ -160,7 +160,7 @@ public class IdamSimulatorController {
     public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Request details with Authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
         return toUserDetails(simObject);
     }
 
@@ -199,10 +199,10 @@ public class IdamSimulatorController {
             scope,
             code
         );
-        String token = simulatorService.generateAToken(username, clientId, grantType);
+        String token = simulatorService.generateACachedToken(username, clientId, grantType);
         String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
         String idToken = simulatorService.generateAToken(username, clientId, grantType);
-        LOG.info("Access Open Id Token Generated {}", token);
+        LOG.info("Access Open Id Token returned {}", token);
         simulatorService.updateTokenInUser(username, token);
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
                                  "openid profile roles", "Bearer"
@@ -213,7 +213,7 @@ public class IdamSimulatorController {
     public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Request o/userinfo with authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
         return toUserInfo(simObject);
     }
 

@@ -21,7 +21,7 @@ public class JwTokenGeneratorTest {
     JsonWebKeyService jsonWebKeyService;
 
     @InjectMocks
-    JwTokenGeneratorService jwTokenGeneratorService;
+    JwTTokenGeneratorService jwTokenGeneratorService;
 
     @Test
     public void generatorShouldReturnADifferentTokenEachTime() throws JOSEException {
