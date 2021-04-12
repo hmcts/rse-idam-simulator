@@ -51,6 +51,7 @@ public class IdamSimulatorControllersHappyPathTest {
     public static final String CLIENT_ID = "client_id";
     public static final String REDIRECT_URI = "redirect_uri";
     public static final String CLIENT_ID_HMCTS = "hmcts";
+    public static final String A_USER_NAME = "aUserName";
 
     @MockBean
     OpenIdConfigService openIdConfigService;
@@ -126,7 +127,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return an user details")
     @Test
     public void returnOneUserDetails() throws Exception {
-        when(liveMemoryService.getByBearerToken(anyString()))
+        when(liveMemoryService.getByJwToken(anyString()))
             .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
 
         mockMvc.perform(get("/details").header(AUTHORIZATION, BEARER_TOKEN))
@@ -146,7 +147,7 @@ public class IdamSimulatorControllersHappyPathTest {
 
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                            .param("grant_type", "client_credentials")
+                            .param("grant_type", "authorization_code")
                             .param(REDIRECT_URI, "aRedirectUrl")
                             .param(CLIENT_ID, CLIENT_ID_HMCTS)
                             .param("code", "123456")
@@ -163,6 +164,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @Test
     public void returnOpenIdToken() throws Exception {
         when(simulatorService.generateAToken(anyString(), anyString(), anyString())).thenReturn(TOKEN);
+        when(simulatorService.generateACachedToken(anyString(), anyString(), anyString())).thenReturn(TOKEN);
         when(liveMemoryService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
 
         mockMvc.perform(post("/o/token")
@@ -171,7 +173,7 @@ public class IdamSimulatorControllersHappyPathTest {
                             .param("client_secret", "oneClientSecret")
                             .param("grant_type", "grantable")
                             .param(REDIRECT_URI, "aRedirectUrl")
-                            .param("username", "aUserName")
+                            .param("username", A_USER_NAME)
                             .param("password", "somePassword")
                             .param("scope", "openid profile roles"))
             .andExpect(status().isOk())
@@ -184,16 +186,18 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
 
-        verify(simulatorService, times(3))
-            .generateAToken("aUserName", CLIENT_ID_HMCTS, "grantable");
+        verify(simulatorService, times(2))
+            .generateAToken(A_USER_NAME, CLIENT_ID_HMCTS, "grantable");
         verify(simulatorService, times(1))
-            .updateTokenInUser("aUserName", TOKEN);
+            .generateACachedToken(A_USER_NAME, CLIENT_ID_HMCTS, "grantable");
+        verify(simulatorService, times(1))
+            .updateTokenInUser(A_USER_NAME, TOKEN);
     }
 
     @DisplayName("Should return expected user info")
     @Test
     public void returnUserInfo() throws Exception {
-        when(liveMemoryService.getByBearerToken(anyString()))
+        when(liveMemoryService.getByJwToken(anyString()))
             .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
         mockMvc.perform(get("/o/userinfo").header(AUTHORIZATION, BEARER_TOKEN))
             .andExpect(status().isOk())
@@ -210,7 +214,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return expected user details")
     @Test
     public void returnUserDetails() throws Exception {
-        when(liveMemoryService.getByBearerToken(anyString()))
+        when(liveMemoryService.getByJwToken(anyString()))
             .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
         when(liveMemoryService.getByUserId(anyString())).thenReturn(SimulatorDataFactory.createSimObject());
 
@@ -228,7 +232,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @DisplayName("Should return expected user details using a query")
     @Test
     public void searchUserDetails() throws Exception {
-        when(liveMemoryService.getByBearerToken(anyString()))
+        when(liveMemoryService.getByJwToken(anyString()))
             .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
         when(liveMemoryService.getByUserId(anyString())).thenReturn(SimulatorDataFactory.createSimObject());
 

@@ -54,14 +54,14 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
             .andReturn();
     }
 
-    @DisplayName("Grant types must be only authorization_code or client_credentials")
+    @DisplayName("Grant types must be only authorization_code")
     @Test
     public void oauth2tokenCredentialChecks() throws Exception {
         assertNotNull(liveMemoryService);
 
         postOauthToken("Wrong", VALIDE_CODE, status().isBadRequest());
         postOauthToken("authorization_code", VALIDE_CODE, status().isOk());
-        postOauthToken("client_credentials", VALIDE_CODE, status().isOk());
+        postOauthToken("client_credentials", VALIDE_CODE, status().isBadRequest());
     }
 
     @DisplayName("Grant type authorization_code required a code")
@@ -70,7 +70,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
         assertNotNull(liveMemoryService);
 
         postOauthToken("authorization_code", "", status().isBadRequest());
-        postOauthToken("client_credentials", "", status().isOk());
+        postOauthToken("client_credentials", "", status().isBadRequest());
         postOauthToken("authorization_code", VALIDE_CODE, status().isOk());
     }
 

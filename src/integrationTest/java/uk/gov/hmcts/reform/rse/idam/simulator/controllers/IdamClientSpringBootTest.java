@@ -157,11 +157,18 @@ public class IdamClientSpringBootTest {
             MYEMAIL_HMCTSTEST_NET,
             "somePassword"
         );
-        assertEquals(tokenResponse.expiresIn, "14400000");
+        assertEquals(tokenResponse.expiresIn, "28800000");
         assertEquals(tokenResponse.scope, "openid profile roles");
         assertEquals(tokenResponse.tokenType, "Bearer");
         assertNotNull(tokenResponse.accessToken);
         assertTrue(tokenResponse.accessToken.length() >= BEARER_SIZE);
+
+        //Token should be keep in cache until expiration
+        TokenResponse tokenResponse2 = idamClient.getAccessTokenResponse(
+            MYEMAIL_HMCTSTEST_NET,
+            "somePassword"
+        );
+        assertEquals(tokenResponse.accessToken, tokenResponse2.accessToken, "Tokens should be the same");
     }
 
     @Test

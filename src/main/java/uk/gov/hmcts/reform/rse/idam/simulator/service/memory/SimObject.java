@@ -11,6 +11,8 @@ import java.util.List;
 @Getter
 public class SimObject {
 
+    public static final String BEARER_ = "Bearer ";
+
     private String clientId;
     /**
      * uid is id in Idam.
@@ -27,12 +29,14 @@ public class SimObject {
     private String surname;
     private List<String> roles;
     private String sub;
-    private String mostRecentBearerToken;
+    private String mostRecentJwToken;
+    private long mostRecentJwTokenUnixTime;
     private String mostRecentCode;
     private String lastGeneratedPin;
 
-    public void setMostRecentBearerToken(String mostRecentBearerToken) {
-        this.mostRecentBearerToken = mostRecentBearerToken;
+    public void setMostRecentJwToken(String mostRecentJwToken) {
+        this.mostRecentJwToken = mostRecentJwToken.replace(BEARER_, "");
+        this.mostRecentJwTokenUnixTime = System.currentTimeMillis();
     }
 
     public void setMostRecentCode(String mostRecentCode) {

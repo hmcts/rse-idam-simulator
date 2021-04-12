@@ -22,10 +22,12 @@ public class LiveMemoryService {
             .findFirst();
     }
 
-    public Optional<SimObject> getByBearerToken(String bearerToken) {
+    public Optional<SimObject> getByJwToken(String bearerToken) {
         return memories.entrySet().stream()
-            .filter(es -> es.getValue() != null && es.getValue().getMostRecentBearerToken() != null)
-            .filter(es -> es.getValue().getMostRecentBearerToken().equalsIgnoreCase(bearerToken))
+            .filter(es -> es.getValue() != null && es.getValue().getMostRecentJwToken() != null)
+            .filter(es -> es.getValue().getMostRecentJwToken()
+                    .equalsIgnoreCase(bearerToken.replace(SimObject.BEARER_, ""))
+            )
             .map(es -> es.getValue())
             .findFirst();
     }

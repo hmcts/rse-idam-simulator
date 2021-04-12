@@ -53,7 +53,6 @@ public class IdamSimulatorController {
     public static final String CLIENT_ID = "client_id";
     public static final String REDIRECT_URI = "redirect_uri";
     private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
-    private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
     @Autowired
     private OpenIdConfigService openIdConfigService;
@@ -103,10 +102,10 @@ public class IdamSimulatorController {
                                      @RequestParam("client_secret") final String clientSecret,
                                      @RequestParam("grant_type") final String grantType,
                                      @RequestParam("code") final String code) {
-        LOG.info("Request oauth2 token for code {} and clientId {}", code, clientId);
+        LOG.info("Request oauth2 token for grantType {} code {} and clientId {}", grantType, code, clientId);
 
         checkGrantType(grantType);
-        checkCode(grantType, code);
+        checkCode(code);
 
         String token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
         String refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
@@ -120,23 +119,21 @@ public class IdamSimulatorController {
         );
     }
 
-    private void checkCode(String grantType, String code) {
-        if (grantType.equalsIgnoreCase(GRANT_TYPE_AUTHORIZATION_CODE) && (code == null || code.length() < 4)) {
+    private void checkCode(String code) {
+        if (code == null || code.length() < 4) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Idam Simulator: Code is missing or too short. With " + GRANT_TYPE_AUTHORIZATION_CODE
-                    + " code is mandatory "
+                "Idam Simulator: Code is missing or too short."
             );
         }
     }
 
     private void checkGrantType(String grantType) {
-        if (!(grantType.equalsIgnoreCase(GRANT_TYPE_CLIENT_CREDENTIALS) || grantType.equalsIgnoreCase(
-            GRANT_TYPE_AUTHORIZATION_CODE))) {
+        //Notice than other credential type client_credentials is never used
+        if (!(grantType.equalsIgnoreCase(GRANT_TYPE_AUTHORIZATION_CODE))) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Idam Simulator: Grand type not valid" + grantType + ", must be "
-                    + GRANT_TYPE_AUTHORIZATION_CODE + " or " + GRANT_TYPE_CLIENT_CREDENTIALS
+                "Idam Simulator: Grand type not valid" + grantType + ", must be " + GRANT_TYPE_AUTHORIZATION_CODE
             );
         }
     }
@@ -163,7 +160,7 @@ public class IdamSimulatorController {
     public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Request details with Authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
         return toUserDetails(simObject);
     }
 
@@ -202,10 +199,10 @@ public class IdamSimulatorController {
             scope,
             code
         );
-        String token = simulatorService.generateAToken(username, clientId, grantType);
+        String token = simulatorService.generateACachedToken(username, clientId, grantType);
         String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
         String idToken = simulatorService.generateAToken(username, clientId, grantType);
-        LOG.info("Access Open Id Token Generated {}", token);
+        LOG.info("Access Open Id Token returned {}", token);
         simulatorService.updateTokenInUser(username, token);
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
                                  "openid profile roles", "Bearer"
@@ -216,7 +213,7 @@ public class IdamSimulatorController {
     public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Request o/userinfo with authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByBearerToken(authorization).get();
+        SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
         return toUserInfo(simObject);
     }
 
@@ -300,6 +297,10 @@ public class IdamSimulatorController {
         LOG.info("Add new user in simulator for {} {} {}",
                  request.getEmail(), request.getSurname(), userId
         );
+
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: email is missing or null");
+        }
 
         liveMemoryService.putSimObject(userId, SimObject.builder()
             .email(request.getEmail())

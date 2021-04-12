@@ -28,7 +28,7 @@ public class JwTokenGeneratorService {
     JsonWebKeyService jsonWebKeyService;
 
     public String generateToken(String issuer, long ttlMillis, String userName,
-                                             String serviceId, String grantType) {
+                                String serviceId, String grantType) {
 
         Date authTime = new Date();
 

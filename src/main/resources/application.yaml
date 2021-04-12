@@ -14,7 +14,7 @@ management:
 simulator:
   jwt:
     issuer: http://localhost:5556
-    expiration: 14400000 # milliseconds 4 hours
+    expiration: 28800000 # milliseconds 8 hours / 28800000ms
   openid:
     base-url: http://localhost:5556
 
