@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTTokenGeneratorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class SimulatorService {
     public static final int AUTH_CODE_LENGTH = 27;
 
     @Autowired
-    private JwTTokenGeneratorService jwTokenGenerator;
+    private JwTokenGeneratorService jwTokenGenerator;
 
     @Autowired
     private LiveMemoryService liveMemoryService;

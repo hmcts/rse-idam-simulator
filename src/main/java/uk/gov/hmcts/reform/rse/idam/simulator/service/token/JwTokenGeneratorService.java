@@ -20,7 +20,7 @@ import static com.google.common.collect.Lists.newArrayList;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI"})
 @Component
-public class JwTTokenGeneratorService {
+public class JwTokenGeneratorService {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonWebKeyService.class);
 
