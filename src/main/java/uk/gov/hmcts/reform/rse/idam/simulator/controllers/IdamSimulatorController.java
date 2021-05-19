@@ -293,7 +293,7 @@ public class IdamSimulatorController {
      */
     @PostMapping("/testing-support/accounts")
     public IdamUserAddReponse addNewUser(@RequestBody IdamTestingUser request) {
-        String userId = UUID.randomUUID().toString();
+        String userId = UUID.nameUUIDFromBytes(request.getEmail().getBytes()).toString();
         LOG.info("Add new user in simulator for {} {} {}",
                  request.getEmail(), request.getSurname(), userId
         );
