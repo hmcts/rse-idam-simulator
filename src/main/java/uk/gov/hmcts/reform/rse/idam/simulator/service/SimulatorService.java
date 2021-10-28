@@ -52,11 +52,14 @@ public class SimulatorService {
     }
 
     public String generateACachedToken(String userName, String clientID, String grantType) {
-        Boolean tokenExpired = liveMemoryService.getByEmail(userName).stream()
+        Optional<Boolean> tokenExpired = liveMemoryService.getByEmail(userName).stream()
             .map(SimObject::getMostRecentJwTokenUnixTime)
-            .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst().get();
+            .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst();
 
-        if (tokenExpired || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
+        if (tokenExpired.isEmpty() 
+            || tokenExpired.get() 
+            || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
+            
             LOG.info("Token not existing or expired and will be regenerated");
             return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
         }
