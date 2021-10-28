@@ -56,7 +56,9 @@ public class SimulatorService {
             .map(SimObject::getMostRecentJwTokenUnixTime)
             .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst();
 
-        if (tokenExpired.isEmpty() || tokenExpired.get() || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
+        if (tokenExpired.isEmpty() 
+            || tokenExpired.get() 
+            || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
             LOG.info("Token not existing or expired and will be regenerated");
             return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
         }
