@@ -52,7 +52,7 @@ public class SimulatorService {
     }
 
     public String generateACachedToken(String userName, String clientID, String grantType) {
-        Boolean tokenExpired = liveMemoryService.getByEmail(userName).stream()
+        Optional<Boolean> tokenExpired = liveMemoryService.getByEmail(userName).stream()
             .map(SimObject::getMostRecentJwTokenUnixTime)
             .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst();
 
