@@ -59,6 +59,7 @@ public class SimulatorService {
         if (tokenExpired.isEmpty() 
             || tokenExpired.get() 
             || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
+            
             LOG.info("Token not existing or expired and will be regenerated");
             return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
         }
