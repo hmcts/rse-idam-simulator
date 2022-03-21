@@ -16,7 +16,7 @@ jobs:
       with:
         java-version: 11
     - name: Build
-      run: ./gradlew check -i
+      run: ./gradlew build check -i
     - name: Push to ACR
       if: github.ref == 'refs/heads/master'
       uses: azure/docker-login@v1
