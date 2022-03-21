@@ -24,6 +24,7 @@ jobs:
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
     - run: |
+        docker buildx create --name mybuilder --use
         docker buildx build --push --platform linux/amd64,linux/arm64 -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/hmcts/rse/rse-idam-simulator:latest .
 #      if: github.ref == 'refs/heads/master'
 
