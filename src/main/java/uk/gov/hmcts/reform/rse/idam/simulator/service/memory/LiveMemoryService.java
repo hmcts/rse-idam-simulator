@@ -1,5 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.memory;
 
+import com.nimbusds.jose.JWSObject;
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -22,13 +24,16 @@ public class LiveMemoryService {
             .findFirst();
     }
 
+    @SneakyThrows
     public Optional<SimObject> getByJwToken(String bearerToken) {
-        return memories.entrySet().stream()
-            .filter(es -> es.getValue() != null && es.getValue().getMostRecentJwToken() != null)
-            .filter(es -> es.getValue().getMostRecentJwToken()
-                    .equalsIgnoreCase(bearerToken.replace(SimObject.BEARER_, ""))
+        var email = JWSObject.parse(bearerToken.replace(SimObject.BEARER_, ""))
+            .getPayload().toJSONObject()
+            .getAsString("sub");
+        return memories.values().stream()
+            .filter(simObject -> simObject != null && simObject.getEmail() != null)
+            .filter(simObject -> simObject.getEmail()
+              .equalsIgnoreCase(email)
             )
-            .map(es -> es.getValue())
             .findFirst();
     }
 
