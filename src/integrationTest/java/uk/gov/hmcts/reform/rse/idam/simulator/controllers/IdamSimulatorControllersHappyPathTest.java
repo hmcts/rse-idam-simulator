@@ -6,6 +6,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -144,14 +145,13 @@ public class IdamSimulatorControllersHappyPathTest {
     @Test
     public void returnOauth2Token() throws Exception {
         when(simulatorService.generateAuthTokenFromCode(anyString(), anyString(), anyString())).thenReturn(TOKEN);
-
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                            .header(HttpHeaders.AUTHORIZATION,
+                              "Basic " + HttpHeaders.encodeBasicAuth("foo", "bar", null))
                             .param("grant_type", "authorization_code")
                             .param(REDIRECT_URI, "aRedirectUrl")
-                            .param(CLIENT_ID, CLIENT_ID_HMCTS)
-                            .param("code", "123456")
-                            .param("client_secret", "oneSecret"))
+                            .param("code", "123456"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
