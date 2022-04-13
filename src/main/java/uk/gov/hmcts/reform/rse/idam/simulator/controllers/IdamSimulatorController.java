@@ -97,11 +97,20 @@ public class IdamSimulatorController {
     }
 
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public TokenResponse oauth2Token(@RequestParam(CLIENT_ID) final String clientId,
+    public TokenResponse oauth2Token(@RequestParam(value = CLIENT_ID, required = false) String clientId,
                                      @RequestParam(REDIRECT_URI) final String redirectUri,
-                                     @RequestParam("client_secret") final String clientSecret,
+                                     @RequestParam(value = "client_secret", required = false) String clientSecret,
                                      @RequestParam("grant_type") final String grantType,
-                                     @RequestParam("code") final String code) {
+                                     @RequestParam("code") final String code,
+                                     @RequestHeader(value = AUTHORIZATION, required = false)
+                                         final String authorization) {
+
+        // Take client details from authorization if not in params.
+        if (clientId == null || clientSecret == null) {
+            var creds = new String(Base64.getDecoder().decode(authorization.replace("Basic ", "")))
+                .split(":");
+            clientId = creds[0];
+        }
         LOG.info("Request oauth2 token for grantType {} code {} and clientId {}", grantType, code, clientId);
 
         checkGrantType(grantType);
