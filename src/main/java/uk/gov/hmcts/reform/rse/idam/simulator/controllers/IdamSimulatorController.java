@@ -76,7 +76,7 @@ public class IdamSimulatorController {
     private String idamBaseUrl;
 
     /*
-    This method is no longer acceptable as idam now uses OpenID Connect and /oauth2/authorize endpoint is deprecated.
+    This tactical endpoint is replaced by OpenID /o/authorize.
     */
     @Deprecated
     @PostMapping(value = "/oauth2/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -96,6 +96,10 @@ public class IdamSimulatorController {
         return new AuthenticateUserResponse(newCode);
     }
 
+    /*
+    This tactical endpoint is replaced by OpenID /o/token.
+     */
+    @Deprecated
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse oauth2Token(@RequestParam(value = CLIENT_ID, required = false) String clientId,
                                      @RequestParam(REDIRECT_URI) final String redirectUri,
@@ -111,6 +115,7 @@ public class IdamSimulatorController {
                 .split(":");
             clientId = creds[0];
         }
+        LOG.warn("oauth2/token endpoint is deprecated!");
         LOG.info("Request oauth2 token for grantType {} code {} and clientId {}", grantType, code, clientId);
 
         checkGrantType(grantType);
@@ -165,8 +170,13 @@ public class IdamSimulatorController {
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
 
+    /*
+    This tactical endpoint is replaced by OpenID /o/userinfo.
+     */
+    @Deprecated
     @GetMapping("/details")
     public IdamUserDetails getDetails(@RequestHeader(AUTHORIZATION) String authorization) {
+        LOG.warn("/details endpoint is deprecated!");
         LOG.info("Request details with Authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
