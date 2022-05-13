@@ -189,7 +189,7 @@ dependencies {
   compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-core', version: '9.0.35'
   compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-websocket', version: '9.0.35'
 
-  compile group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.9'
+  compile group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '9.22'
   compile group: 'net.minidev', name: 'json-smart', version: '2.3'
 
   compileOnly group: 'org.projectlombok', name: 'lombok', version: versions.lombok
