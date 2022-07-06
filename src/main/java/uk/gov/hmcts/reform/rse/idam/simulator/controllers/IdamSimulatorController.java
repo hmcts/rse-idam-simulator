@@ -82,8 +82,10 @@ public class IdamSimulatorController {
     @PostMapping(value = "/oauth2/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public AuthenticateUserResponse authoriseUser(@RequestHeader(AUTHORIZATION) String authorization,
                                                   @RequestParam(CLIENT_ID) final String clientId,
-                                                  @RequestParam(REDIRECT_URI) final String redirectUri,
-                                                  @RequestParam("response_type") final String responseType
+                                                  @RequestParam(value = REDIRECT_URI, required = false)
+                                                      final String redirectUri,
+                                                  @RequestParam(value = "response_type", required = false)
+                                                      final String responseType
     ) {
         LOG.warn("oauth2/authorize endpoint is deprecated!");
         LOG.info("Request oauth2 authorise for clientId {}", clientId);
@@ -102,7 +104,7 @@ public class IdamSimulatorController {
     @Deprecated
     @PostMapping(value = "/oauth2/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse oauth2Token(@RequestParam(value = CLIENT_ID, required = false) String clientId,
-                                     @RequestParam(REDIRECT_URI) final String redirectUri,
+                                     @RequestParam(name = REDIRECT_URI, required = false) final String redirectUri,
                                      @RequestParam(value = "client_secret", required = false) String clientSecret,
                                      @RequestParam("grant_type") final String grantType,
                                      @RequestParam("code") final String code,
@@ -160,9 +162,9 @@ public class IdamSimulatorController {
 
     @GetMapping(value = "/pin", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Object> getPin(@RequestHeader("pin") final String pin,
-                                         @RequestParam(CLIENT_ID) final String clientId,
+                                         @RequestParam(value = CLIENT_ID, required = false) final String clientId,
                                          @RequestParam(REDIRECT_URI) final String redirectUri,
-                                         @RequestParam("state") final String state) {
+                                         @RequestParam(value = "state", required = false) final String state) {
         LOG.info("Get Request Pin for pin {} to generate new code in Location Header", pin);
         HttpHeaders httpHeaders = new HttpHeaders();
         String generatedPinCode = simulatorService.generateOauth2CodeFromPin(pin);
@@ -204,11 +206,13 @@ public class IdamSimulatorController {
 
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
-                                        @RequestParam(REDIRECT_URI) final String redirectUri,
-                                        @RequestParam("client_secret") final String clientSecret,
+                                        @RequestParam(name = REDIRECT_URI, required = false) final String redirectUri,
+                                        @RequestParam(value = "client_secret", required = false)
+                                            final String clientSecret,
                                         @RequestParam("grant_type") final String grantType,
                                         @RequestParam("username") final String username,
-                                        @RequestParam("password") final String password,
+                                        @RequestParam(value = "password", required = false)
+                                            final String password,
                                         @RequestParam("scope") final String scope,
                                         @RequestParam(name = "code", required = false) final String code) {
         LOG.info(
@@ -252,7 +256,7 @@ public class IdamSimulatorController {
     }
 
     @PostMapping(value = "/o/authorize", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Object> postoAutorize(
+    public ResponseEntity<Object> postToAuthorize(
         @RequestParam(value = "client_id", required = false) String clientId,
         @RequestParam(value = "redirect_uri", required = false) String redirectUri,
         @RequestParam(value = "state", required = false) String state,

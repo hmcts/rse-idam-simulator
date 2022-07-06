@@ -20,7 +20,7 @@ docker run -d -P --name rse-idam-simulator -p 5556:5556 hmctspublic.azurecr.io/h
 ## Running/Debugging the application with IntelliJ Idea
 Right click on Application.java and choose Run 'Application.main()' or Debug 'Application.main()'
 
-Open this url http://localhost:5556/health to check it has started correctly
+Open this url `http://localhost:5556/health` to check it has started correctly
 
 ## How to use the simulator with Post Man
 Check IdamSimulatorController to see how works the endpoints. These endpoints are all the endpoints required to have the idam java client working correctly,
@@ -36,8 +36,11 @@ Content-type: application/json
 
 "email": "myemail-test@hmcts.net",
 "forename": "John",
-"surename": "Smith",
-"roles": ["role1", "role2"],
+"surname": "Smith",
+"roles": [
+    {"code": "role1"},
+    {"code": "role2"}
+],
 "password": "onePassword"
 
 }
