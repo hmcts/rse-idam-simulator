@@ -20,7 +20,7 @@ docker run -d -P --name rse-idam-simulator -p 5556:5556 hmctspublic.azurecr.io/h
 ## Running/Debugging the application with IntelliJ Idea
 Right click on Application.java and choose Run 'Application.main()' or Debug 'Application.main()'
 
-Open this url http://localhost:5556/health to check it has started correctly
+Open this url `http://localhost:5556/health` to check it has started correctly
 
 ## How to use the simulator with Post Man
 Check IdamSimulatorController to see how works the endpoints. These endpoints are all the endpoints required to have the idam java client working correctly,
@@ -36,14 +36,17 @@ Content-type: application/json
 
 "email": "myemail-test@hmcts.net",
 "forename": "John",
-"surename": "Smith",
-"roles": ["role1", "role2"],
+"surname": "Smith",
+"roles": [
+    {"code": "role1"},
+    {"code": "role2"}
+],
 "password": "onePassword"
 
 }
 ```
 
-Have an openId Token using this call. Notice this is not some Jason content but x-www-form-urlencoded content.
+Have an openId Token using this call. Notice this is not some JSON content but x-www-form-urlencoded content.
 ```
 POST  http://localhost:5556/o/token
 Content-type: application/x-www-form-urlencoded
@@ -63,7 +66,7 @@ Do same operation than above but using these swaggers endpoints from any browser
 - http://localhost:5556/swagger-ui.html#/idam-simulator-controller/getOpenIdTokenUsingPOST
 
 ## How to login and have a session cookie like ExUI does?
-- start the application and add an user like explain in **How to use the simulator with Post Man** above section
+- start the application and add an user like explain in **How to use the simulator with Postman** above section
 - Let's say we have added the user myemail-test@hmcts.net and after login we want to be redirected to https://www.gov.uk
 - Use any browser to login by an url similar to this one
 ```
