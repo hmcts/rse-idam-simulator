@@ -17,8 +17,8 @@ jobs:
         java-version: 11
     - name: Build
       run: ./gradlew build -i
-    - name: Push to ACR
-      uses: azure/docker-login@v1
+    - name: Login to Azure Container Repository
+      uses: azure/login-action@v1
       with:
         login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
         username: ${{ secrets.REGISTRY_USERNAME }}
