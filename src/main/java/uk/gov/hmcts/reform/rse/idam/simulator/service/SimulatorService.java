@@ -54,7 +54,9 @@ public class SimulatorService {
     public String generateACachedToken(String userName, String clientID, String grantType) {
         Optional<SimObject> userInMemory = liveMemoryService.getByEmail(userName);
         if (userInMemory.isEmpty()) {
-            LOG.warn("No User for this userName " + userName + ". Usually this happen in the simulator because this user has not been added to the system by a post on testing-support/accounts");
+            LOG.warn("No User for this userName " + userName
+                         + ". Usually this happens because the user has not been added to the system"
+                         + " by a post on testing-support/accounts");
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "Idam Simulator: No User for this userName " + userName
