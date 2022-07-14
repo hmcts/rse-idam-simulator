@@ -249,6 +249,13 @@ public class IdamClientSpringBootTest {
         });
     }
 
+    @Test
+    public void unauthorizedForUnknownUser() {
+        expect401Error(() -> {
+            idamClient.getAccessToken("unknowUser@gmail.com", "onePassword");
+        });
+    }
+
     private String fetchAccessToken(String email) {
         return idamClient.getAccessToken(email, "onePassword");
     }
