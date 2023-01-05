@@ -169,6 +169,7 @@ ext.libraries = [
 
 dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+//  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
 //  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
