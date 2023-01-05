@@ -170,8 +170,6 @@ ext.libraries = [
 dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
 
-  implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
-
   compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.2'
   compile group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.13.2'
 
