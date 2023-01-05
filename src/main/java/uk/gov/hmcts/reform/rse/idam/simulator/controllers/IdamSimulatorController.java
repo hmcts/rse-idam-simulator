@@ -284,7 +284,6 @@ public class IdamSimulatorController {
         return Map.of("status", "UP");
     }
 
-
     private IdamUserInfo toUserInfo(SimObject simObject) {
         IdamUserInfo idamUserInfo = new IdamUserInfo();
         idamUserInfo.setFamilyName(simObject.getSurname());
