@@ -194,6 +194,33 @@ public class IdamSimulatorControllersHappyPathTest {
             .updateTokenInUser(A_USER_NAME, TOKEN);
     }
 
+    @DisplayName("Should return an open id token from code")
+    @Test
+    public void returnOpenIdTokenFromCode() throws Exception {
+        when(simulatorService.generateAuthTokenFromCode(anyString(), anyString(), anyString())).thenReturn(TOKEN);
+
+        mockMvc.perform(post("/o/token")
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                            .param(CLIENT_ID, CLIENT_ID_HMCTS)
+                            .param("client_secret", "oneClientSecret")
+                            .param("grant_type", "authorization_code")
+                            .param(REDIRECT_URI, "aRedirectUrl")
+                            .param("code", "someCode")
+                            .param("scope", "openid profile roles"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.access_token").isString())
+            .andExpect(jsonPath("$.expires_in").isString())
+            .andExpect(jsonPath("$.id_token").isString())
+            .andExpect(jsonPath("$.refresh_token").isString())
+            .andExpect(jsonPath("$.scope").value("openid profile roles"))
+            .andExpect(jsonPath("$.token_type").value("Bearer"))
+            .andExpect(jsonPath("$.access_token").isString())
+            .andReturn();
+
+        verify(simulatorService, times(3))
+            .generateAuthTokenFromCode(anyString(), anyString(), anyString());
+    }
+
     @DisplayName("Should return expected user info")
     @Test
     public void returnUserInfo() throws Exception {
