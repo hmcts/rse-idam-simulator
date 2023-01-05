@@ -169,8 +169,6 @@ ext.libraries = [
 
 dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-//  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
-//  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
   implementation group: 'io.springfox', name: 'springfox-swagger2', version: versions.springfoxSwagger
   implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: versions.springfoxSwagger
@@ -182,10 +180,8 @@ dependencies {
   compile group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.13.2'
 
   compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-core', version: '9.0.35'
-  compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-websocket', version: '9.0.35'
 
   compile group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.9'
-  compile group: 'net.minidev', name: 'json-smart', version: '2.3'
 
   compileOnly group: 'org.projectlombok', name: 'lombok', version: versions.lombok
 
@@ -194,6 +190,7 @@ dependencies {
 
   testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test'
   testCompile group: 'uk.gov.hmcts.reform', name: 'idam-client', version: versions.idamClient
+
 
   testImplementation libraries.junit5
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {

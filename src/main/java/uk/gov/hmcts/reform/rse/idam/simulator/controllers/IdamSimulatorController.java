@@ -36,6 +36,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -277,6 +278,12 @@ public class IdamSimulatorController {
         httpHeaders.add("Location", redirectUri + "?code=" + generatedCode);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
+
+    @GetMapping(value = "/health")
+    public Map<String, String> health() {
+        return Map.of("status", "UP");
+    }
+
 
     private IdamUserInfo toUserInfo(SimObject simObject) {
         IdamUserInfo idamUserInfo = new IdamUserInfo();
