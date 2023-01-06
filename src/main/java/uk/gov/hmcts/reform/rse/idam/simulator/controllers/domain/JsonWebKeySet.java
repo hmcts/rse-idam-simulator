@@ -1,7 +1,6 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +29,7 @@ public class JsonWebKeySet {
         return this;
     }
 
-    @ApiModelProperty("The value of the \"keys\" parameter is an array of JWK values.")
+
     public List<JsonWebKey> getKeys() {
         return this.keys;
     }

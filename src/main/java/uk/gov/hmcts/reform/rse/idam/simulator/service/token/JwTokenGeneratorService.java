@@ -14,9 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
-import static com.google.common.collect.Lists.newArrayList;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI"})
 @Component
@@ -48,7 +48,7 @@ public class JwTokenGeneratorService {
             .claim("auditTrackingId", UUID.randomUUID().toString())
             .claim("auth_level", 0)
             .claim("auth_time", authTime.getTime())
-            .claim("scope", newArrayList("openid", "profile", "roles"))
+            .claim("scope", List.of("openid", "profile", "roles"))
             .claim("expires_in", ttlMillis / 1000);
 
         if (ttlMillis >= 0) {

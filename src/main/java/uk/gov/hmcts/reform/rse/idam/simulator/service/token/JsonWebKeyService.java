@@ -1,9 +1,9 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 
-import com.microsoft.applicationinsights.boot.dependencies.apachecommons.codec.binary.Base64;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
