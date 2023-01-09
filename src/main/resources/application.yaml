@@ -1,6 +1,16 @@
 server:
   port: 5556
 
+management:
+  endpoint:
+    health:
+      show-details: "always"
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health, info, prometheus
+
 simulator:
   jwt:
     issuer: http://localhost:5556

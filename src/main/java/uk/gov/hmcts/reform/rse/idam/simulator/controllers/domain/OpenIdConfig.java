@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +80,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public Boolean isRequestParameterSupported() {
         return this.requestParameterSupported;
     }
@@ -93,7 +94,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public Boolean isClaimsParameterSupported() {
         return this.claimsParameterSupported;
     }
@@ -107,7 +108,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getIntrospectionEndpoint() {
         return this.introspectionEndpoint;
     }
@@ -121,7 +122,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getCheckSessionIframe() {
         return this.checkSessionIframe;
     }
@@ -144,7 +145,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getScopesSupported() {
         return this.scopesSupported;
     }
@@ -158,7 +159,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getIssuer() {
         return this.issuer;
     }
@@ -182,7 +183,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getIdTokenEncryptionEncValuesSupported() {
         return this.idTokenEncryptionEncValuesSupported;
     }
@@ -205,7 +206,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getAcrValuesSupported() {
         return this.acrValuesSupported;
     }
@@ -219,7 +220,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getAuthorizationEndpoint() {
         return this.authorizationEndpoint;
     }
@@ -244,7 +245,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRequestObjectEncryptionEncValuesSupported() {
         return this.requestObjectEncryptionEncValuesSupported;
     }
@@ -269,7 +270,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRcsRequestEncryptionAlgValuesSupported() {
         return this.rcsRequestEncryptionAlgValuesSupported;
     }
@@ -292,7 +293,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getClaimsSupported() {
         return this.claimsSupported;
     }
@@ -316,7 +317,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRcsRequestSigningAlgValuesSupported() {
         return this.rcsRequestSigningAlgValuesSupported;
     }
@@ -339,7 +340,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getTokenEndpointAuthMethodsSupported() {
         return this.tokenEndpointAuthMethodsSupported;
     }
@@ -353,7 +354,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getTokenEndpoint() {
         return this.tokenEndpoint;
     }
@@ -376,7 +377,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getResponseTypesSupported() {
         return this.responseTypesSupported;
     }
@@ -390,7 +391,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public Boolean isRequestUriParameterSupported() {
         return this.requestUriParameterSupported;
     }
@@ -415,7 +416,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRcsResponseEncryptionEncValuesSupported() {
         return this.rcsResponseEncryptionEncValuesSupported;
     }
@@ -429,7 +430,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getEndSessionEndpoint() {
         return this.endSessionEndpoint;
     }
@@ -454,7 +455,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRcsRequestEncryptionEncValuesSupported() {
         return this.rcsRequestEncryptionEncValuesSupported;
     }
@@ -468,7 +469,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getVersion() {
         return this.version;
     }
@@ -493,7 +494,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRcsResponseEncryptionAlgValuesSupported() {
         return this.rcsResponseEncryptionAlgValuesSupported;
     }
@@ -507,7 +508,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getUserinfoEndpoint() {
         return this.userinfoEndpoint;
     }
@@ -531,7 +532,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getIdTokenEncryptionAlgValuesSupported() {
         return this.idTokenEncryptionAlgValuesSupported;
     }
@@ -545,7 +546,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getJwksUri() {
         return this.jwksUri;
     }
@@ -568,7 +569,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getSubjectTypesSupported() {
         return this.subjectTypesSupported;
     }
@@ -591,7 +592,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getIdTokenSigningAlgValuesSupported() {
         return this.idTokenSigningAlgValuesSupported;
     }
@@ -605,7 +606,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public String getRegistrationEndpoint() {
         return this.registrationEndpoint;
     }
@@ -630,7 +631,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRequestObjectSigningAlgValuesSupported() {
         return this.requestObjectSigningAlgValuesSupported;
     }
@@ -655,7 +656,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRequestObjectEncryptionAlgValuesSupported() {
         return this.requestObjectEncryptionAlgValuesSupported;
     }
@@ -679,7 +680,7 @@ public class OpenIdConfig {
         return this;
     }
 
-
+    @ApiModelProperty("")
     public List<String> getRcsResponseSigningAlgValuesSupported() {
         return this.rcsResponseSigningAlgValuesSupported;
     }
