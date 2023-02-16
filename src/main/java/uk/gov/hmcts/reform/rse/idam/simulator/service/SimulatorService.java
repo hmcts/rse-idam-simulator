@@ -38,12 +38,12 @@ public class SimulatorService {
 
     public String generateAuthTokenFromCode(String code, String serviceId, String grantType) {
         Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
+        String token = generateAToken(userInMemory.get().getEmail(), serviceId, grantType);
+        LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
         if (userInMemory.isEmpty()) {
             LOG.warn("No User for this code " + code);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: No User for this code " + code);
         }
-        String token = generateAToken(userInMemory.get().getEmail(), serviceId, grantType);
-        LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
         return token;
     }
 
