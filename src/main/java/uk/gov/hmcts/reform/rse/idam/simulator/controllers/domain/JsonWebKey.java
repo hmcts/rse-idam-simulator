@@ -1,7 +1,6 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
 
@@ -29,7 +28,7 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("Algorithm intended for use with the key")
+
     public String getAlg() {
         return this.alg;
     }
@@ -43,7 +42,7 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("The cryptographic algorithm family used with the key, such as \"RSA\" or \"EC\"")
+
     public String getKty() {
         return this.kty;
     }
@@ -57,7 +56,7 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("The intended use of the public key, such as \"sig\" (signature), \"enc\" (encryption)")
+
     public String getUse() {
         return this.use;
     }
@@ -71,7 +70,7 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("Unique identifier for the key. It is used to match a specific key.")
+
     public String getKid() {
         return this.kid;
     }
@@ -85,7 +84,7 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("The modulus for a standard pem")
+
     public String getN() {
         return this.n;
     }
@@ -99,7 +98,7 @@ public class JsonWebKey {
         return this;
     }
 
-    @ApiModelProperty("The exponent for a standard pem")
+
     public String getE() {
         return this.e;
     }
