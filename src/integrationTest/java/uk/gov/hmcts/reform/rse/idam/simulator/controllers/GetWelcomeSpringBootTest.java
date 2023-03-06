@@ -10,13 +10,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
-import uk.gov.hmcts.reform.idam.client.IdamApi;
-import uk.gov.hmcts.reform.idam.client.IdamClient;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.net.URI;
 
@@ -24,9 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
-@SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class, LiveMemoryService.class,
-    SimulatorService.class, JsonWebKeyService.class, JwTokenGeneratorService.class, OpenIdConfigService.class},
-     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @PropertySource("classpath:application.yaml")
 @EnableAutoConfiguration
 @RunWith(SpringRunner.class)
@@ -42,6 +33,14 @@ public class GetWelcomeSpringBootTest {
         ResponseEntity<String> result = restTemplate.getForEntity(uri, String.class);
         assertEquals("Request is not successful", 200, result.getStatusCodeValue());
         assertTrue("Body doesn't contents status", result.getBody().contains("status"));
+    }
+
+    @Test
+    public void testLoginEndpoint() throws Exception {
+        RestTemplate restTemplate = new RestTemplate();
+        URI uri = new URI("http://localhost:" + localServerPort + "/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en");
+        ResponseEntity<String> result = restTemplate.getForEntity(uri, String.class);
+        assertEquals("Request is not successful", 200, result.getStatusCodeValue());
     }
 
 }
