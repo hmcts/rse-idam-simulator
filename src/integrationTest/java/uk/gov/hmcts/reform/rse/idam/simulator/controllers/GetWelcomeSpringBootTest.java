@@ -10,13 +10,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
-import uk.gov.hmcts.reform.idam.client.IdamApi;
-import uk.gov.hmcts.reform.idam.client.IdamClient;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
 import java.net.URI;
 
