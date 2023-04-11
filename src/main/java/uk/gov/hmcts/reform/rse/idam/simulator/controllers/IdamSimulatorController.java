@@ -1,6 +1,5 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
-import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +33,11 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -308,6 +312,7 @@ public class IdamSimulatorController {
     public Map<String, String> health() {
         return Map.of("status", "UP");
     }
+    
     private IdamUserInfo toUserInfo(SimObject simObject) {
         IdamUserInfo idamUserInfo = new IdamUserInfo();
         idamUserInfo.setFamilyName(simObject.getSurname());
