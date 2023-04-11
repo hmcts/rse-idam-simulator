@@ -36,7 +36,6 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -150,7 +149,7 @@ public class IdamSimulatorController {
         if (!(grantType.equalsIgnoreCase(GRANT_TYPE_AUTHORIZATION_CODE))) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Idam Simulator: Grand type not valid" + grantType + ", must be " + GRANT_TYPE_AUTHORIZATION_CODE
+                "Idam Simulator: Grand type not valid" + grantType + " , must be " + GRANT_TYPE_AUTHORIZATION_CODE
             );
         }
     }
@@ -205,7 +204,7 @@ public class IdamSimulatorController {
         return createUserDetailsList();
     }
 
-    @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @PostMapping(value = "/o/token", params = "username", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
                                         @RequestParam(name = REDIRECT_URI, required = false) final String redirectUri,
                                         @RequestParam(value = "client_secret", required = false)
@@ -214,20 +213,49 @@ public class IdamSimulatorController {
                                         @RequestParam("username") final String username,
                                         @RequestParam(value = "password", required = false)
                                             final String password,
-                                        @RequestParam("scope") final String scope,
-                                        @RequestParam(name = "code", required = false) final String code) {
+                                        @RequestParam("scope") final String scope) {
         LOG.info(
-            "Request OpenId Token for clientId {} Username {} scope {} and code {}",
+            "Request OpenId Token for clientId {} Username {} scope {}",
             clientId,
             username,
-            scope,
-            code
+            scope
         );
         String token = simulatorService.generateACachedToken(username, clientId, grantType);
         String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
         String idToken = simulatorService.generateAToken(username, clientId, grantType);
         LOG.info("Access Open Id Token returned {}", token);
         simulatorService.updateTokenInUser(username, token);
+        return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
+                                 "openid profile roles", "Bearer"
+        );
+    }
+
+    @PostMapping(value = "/o/token", params = "code", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public TokenResponse getOpenIdTokenFromCode(@RequestParam(CLIENT_ID) final String clientId,
+                                                @RequestParam(name = REDIRECT_URI, required = false)
+                                                final String redirectUri,
+                                                @RequestParam(value = "client_secret", required = false)
+                                                    final String clientSecret,
+                                                @RequestParam("grant_type") final String grantType,
+
+                                                final String password,
+                                                @RequestParam(value = "scope", required = false) final String scope,
+                                                @RequestParam(name = "code") final String code) {
+        LOG.info(
+            "Request OpenId Token for clientId {} scope {} and code {}",
+            clientId,
+            scope,
+            code
+        );
+
+        checkGrantType(grantType);
+        checkCode(code);
+
+        String token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        String refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        String idToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        LOG.info("Access Open Id Token generated from code {}", token);
+
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
                                  "openid profile roles", "Bearer"
         );
@@ -277,11 +305,6 @@ public class IdamSimulatorController {
         String generatedCode = simulatorService.getNewAuthCode();
         httpHeaders.add("Location", redirectUri + "?code=" + generatedCode);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
-    }
-
-    @GetMapping(value = "/health")
-    public Map<String, String> health() {
-        return Map.of("status", "UP");
     }
 
     private IdamUserInfo toUserInfo(SimObject simObject) {
