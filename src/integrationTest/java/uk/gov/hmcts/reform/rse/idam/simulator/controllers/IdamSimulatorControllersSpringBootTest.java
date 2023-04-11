@@ -41,7 +41,7 @@ import static uk.gov.hmcts.reform.idam.client.IdamClient.GRANT_TYPE;
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
     LiveMemoryService.class, SimulatorService.class, JsonWebKeyService.class,
     JwTokenGeneratorService.class, OpenIdConfigService.class},
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @PropertySource("classpath:application.yaml")
 @DirtiesContext
 @EnableAutoConfiguration

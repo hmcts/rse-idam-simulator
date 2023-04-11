@@ -312,7 +312,7 @@ public class IdamSimulatorController {
     public Map<String, String> health() {
         return Map.of("status", "UP");
     }
-    
+
     private IdamUserInfo toUserInfo(SimObject simObject) {
         IdamUserInfo idamUserInfo = new IdamUserInfo();
         idamUserInfo.setFamilyName(simObject.getSurname());
