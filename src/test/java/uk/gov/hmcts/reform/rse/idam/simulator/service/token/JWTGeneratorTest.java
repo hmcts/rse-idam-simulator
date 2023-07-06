@@ -3,19 +3,19 @@ package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"PMD.JUnitAssertionsShouldIncludeMessage"})
-@RunWith(MockitoJUnitRunner.class)
-public class JwTokenGeneratorTest {
+@ExtendWith(MockitoExtension.class)
+public class JWTGeneratorTest {
 
     @Mock
     JsonWebKeyService jsonWebKeyService;

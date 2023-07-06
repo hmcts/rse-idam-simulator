@@ -1,15 +1,13 @@
-# Rse Idam Simulator using spring-boot-template
+# Idam Simulator
 
-[![Build Status](https://travis-ci.org/hmcts/spring-boot-template.svg?branch=master)](https://travis-ci.org/hmcts/spring-boot-template)
-
-The Idam Simulator is a small spring app that stub only the endpoints of Idam Api required to request a Bearer Token and login.
+This is a small spring-boot app that stub only the endpoints of Idam Api required to request a Bearer Token and login.
 
 Any call made by Idam Client are correctly handled by the Idam Simulator. The call from XUI for login and redirection is also handled.
 
 It can be run from a docker image or from IntelliJ (so with debugger potentially).
 
-
 ## How to pull an image from acr of the simulator and run it with docker
+
 Execute these 3 commands
 ```
 az acr login --name hmctspublic
@@ -18,38 +16,45 @@ docker run -d -P --name rse-idam-simulator -p 5556:5556 hmctspublic.azurecr.io/h
 ```
 
 ## Running/Debugging the application with IntelliJ Idea
-Right click on Application.java and choose Run 'Application.main()' or Debug 'Application.main()'
+
+Right click on `Application.java` and choose Run `Application.main()` or Debug `Application.main()`
 
 Open this url `http://localhost:5556/health` to check it has started correctly
 
 ## How to use the simulator with Post Man
-Check IdamSimulatorController to see how works the endpoints. These endpoints are all the endpoints required to have the idam java client working correctly,
-and one endpoint to add a user in the local memory map of the simulator. Keep in mind that username and email are the same in Idam system.
 
-Here a quick start and having a request a token using postman and the open id route.
+Check `IdamSimulatorController` to see how the endpoints work.
+These endpoints are all the endpoints required to have the `idam-java-client` working correctly,
+and one endpoint to add a user in the local memory map of the simulator.
+Keep in mind that username and email are the same in Idam system.
 
-Add an user by doing this request:
-```
-POST  http://localhost:5556/testing-support/accounts
-Content-type: application/json
+Here is a quick start and having a request a token using postman and the open id route.
+
+Add a user by doing this request:
+```http request
+POST http://localhost:5556/testing-support/accounts
+Content-Type: application/json
+
 {
-
-"email": "myemail-test@hmcts.net",
-"forename": "John",
-"surname": "Smith",
-"roles": [
-    {"code": "role1"},
-    {"code": "role2"}
-],
-"password": "onePassword"
-
+  "email": "myemail-test@hmcts.net",
+  "forename": "John",
+  "surname": "Smith",
+  "roles": [
+    {
+      "code": "role1"
+    },
+    {
+      "code": "role2"
+    }
+  ],
+  "password": "onePassword"
 }
 ```
 
-Have an openId Token using this call. Notice this is not some JSON content but x-www-form-urlencoded content.
-```
-POST  http://localhost:5556/o/token
-Content-type: application/x-www-form-urlencoded
+Have an Open ID Token using this call. Notice this is not JSON content but `x-www-form-urlencoded content`.
+```http request
+POST http://localhost:5556/o/token
+Content-Type: application/x-www-form-urlencoded
 
 client_id: sometestservice
 client_secret: sometestservice
@@ -60,13 +65,9 @@ password: somePassword
 scope: openid profile roles
 ```
 
-## How to add an user and request a token using swagger?
-Do same operation than above but using these swaggers endpoints from any browser:
-- http://localhost:5556/swagger-ui.html#/idam-simulator-controller/addNewUserUsingPOST
-- http://localhost:5556/swagger-ui.html#/idam-simulator-controller/getOpenIdTokenUsingPOST
+## How to log in and have a session cookie like Expert UI does?
 
-## How to login and have a session cookie like ExUI does?
-- start the application and add an user like explain in **How to use the simulator with Postman** above section
+- Start the application and add a user like in **How to use the simulator with Postman** above section
 - Let's say we have added the user myemail-test@hmcts.net and after login we want to be redirected to https://www.gov.uk
 - Use any browser to login by an url similar to this one
 ```
@@ -153,8 +154,6 @@ docker image rm <image-id>
 ```
 
 There is no need to remove postgres and java or similar core images.
-
-
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
