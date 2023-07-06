@@ -1,5 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +20,10 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 
 import java.util.Arrays;
 import java.util.List;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.DataflowAnomalyAnalysis"})
 @Controller
-public class  LoginController {
+public class LoginController {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
 
