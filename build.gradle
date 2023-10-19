@@ -123,7 +123,7 @@ dependencies {
   implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.9'
 
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'com.github.hmcts', name: 'idam-java-client', version: '3.0.1'
+  testImplementation group: 'com.github.hmcts', name: 'idam-java-client', version: '3.0.2'
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-contract-wiremock', version: '4.0.4'
 }
