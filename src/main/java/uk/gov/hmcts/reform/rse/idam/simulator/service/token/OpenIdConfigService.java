@@ -16,7 +16,7 @@ public class OpenIdConfigService {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenIdConfigService.class);
 
-    public OpenIdConfig getOpenIdConfig(String baseUrl, String issuer) {
+    public OpenIdConfig getOpenIdConfig(String baseUrl) {
         OpenIdConfig openIdConfig = new OpenIdConfig();
         openIdConfig.authorizationEndpoint(baseUrl + "/o/authorize")
             .requestParameterSupported(true)
@@ -81,7 +81,6 @@ public class OpenIdConfigService {
                 "PS256"
             ))
             .rcsResponseEncryptionEncValuesSupported(Arrays.asList("A256GCM", "A128CBC-HS256", "A256CBC-HS512"))
-            .issuer(issuer)
             .tokenEndpoint(baseUrl + "/o/token")
             .userinfoEndpoint(baseUrl + "/o/userinfo")
             .jwksUri(baseUrl + "/o/jwks")

@@ -249,4 +249,20 @@ public class IdamSimulatorControllersHappyPathTest {
             .andReturn();
     }
 
+    @DisplayName("Should return user by email")
+    @Test
+    public void returnUserByEmail() throws Exception {
+        when(liveMemoryService.getByEmail(anyString()))
+            .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+        mockMvc.perform(get("/testing-support/accounts?email=" + TEST_EMAIL_HMCTS_NET))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(ONE_USER_ID))
+            .andExpect(jsonPath("$.email").value(TEST_EMAIL_HMCTS_NET))
+            .andExpect(jsonPath("$.forename").value(JOHN))
+            .andExpect(jsonPath("$.surname").value(SMITH))
+            .andExpect(jsonPath("$.roles[0]").value(ROLE_1))
+            .andExpect(jsonPath("$.roles[1]").value(ROLE_2))
+            .andReturn();
+    }
+
 }

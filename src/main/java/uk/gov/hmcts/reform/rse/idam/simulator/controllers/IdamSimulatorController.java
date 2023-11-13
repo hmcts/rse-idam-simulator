@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,8 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -70,11 +73,11 @@ public class IdamSimulatorController {
     @Value("${simulator.jwt.expiration}")
     private long expiration;
 
-    @Value("${simulator.jwt.issuer}")
-    private String jwtIssuer;
-
     @Value("${simulator.openid.base-url}")
     private String idamBaseUrl;
+
+    @Value("${simulator.openid.base-url-outside-network}")
+    private String idamBaseUrlOutsideNetwork;
 
     /*
     This tactical endpoint is replaced by OpenID /o/authorize.
@@ -249,10 +252,11 @@ public class IdamSimulatorController {
     }
 
     @GetMapping("/o/.well-known/openid-configuration")
-    public ResponseEntity<OpenIdConfig> getOpenIdConfig() {
+    public ResponseEntity<OpenIdConfig> getOpenIdConfig(HttpServletRequest httpRequest) {
         LOG.info("Request openIdConfig");
-        OpenIdConfig openIdConfig = openIdConfigService
-            .getOpenIdConfig(idamBaseUrl, jwtIssuer);
+        String baseUrl = isRequestFromSameNetwork(httpRequest.getRemoteAddr())
+            ? idamBaseUrl : idamBaseUrlOutsideNetwork;
+        OpenIdConfig openIdConfig = openIdConfigService.getOpenIdConfig(baseUrl);
         return ResponseEntity.ok(openIdConfig);
     }
 
@@ -307,6 +311,16 @@ public class IdamSimulatorController {
         return res;
     }
 
+    private boolean isRequestFromSameNetwork(String remoteAddress) {
+        try {
+            String localAddress = InetAddress.getLocalHost().getHostAddress();
+            // Good enough for now to check the first part of the IP addresses match...
+            return remoteAddress.split("\\.")[0].equals(localAddress.split("\\.")[0]);
+        } catch (UnknownHostException e) {
+            return true;
+        }
+    }
+
     private List<IdamUserDetails> createUserDetailsList() {
         return Collections.singletonList(getUserOne("oneUUIDValue"));
     }
@@ -339,6 +353,15 @@ public class IdamSimulatorController {
             .roles(request.getRoles().stream().map(RoleDetails::getCode).collect(Collectors.toList()))
             .build());
         return new IdamUserAddReponse(userId);
+    }
+
+    @GetMapping("/testing-support/accounts")
+    public IdamUserDetails getUserByEmail(@RequestParam("email") String email) {
+        LOG.info("Get user by email: {}", email);
+        SimObject simObject = liveMemoryService.getByEmail(email).orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Idam Simulator: User not found")
+        );
+        return toUserDetails(simObject);
     }
 
 }
