@@ -31,8 +31,8 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.TokenResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -68,7 +68,7 @@ public class IdamSimulatorController {
     private SimulatorService simulatorService;
 
     @Autowired
-    private LiveMemoryService liveMemoryService;
+    private UserService userService;
 
     @Value("${simulator.jwt.expiration}")
     private long expiration;
@@ -185,7 +185,7 @@ public class IdamSimulatorController {
         LOG.warn("/details endpoint is deprecated!");
         LOG.info("Request details with Authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
+        SimObject simObject = userService.getByJwToken(authorization).get();
         return toUserDetails(simObject);
     }
 
@@ -195,7 +195,7 @@ public class IdamSimulatorController {
         @PathVariable("userId") String userId) {
         LOG.info("Request User Details {}", userId);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByUserId(userId);
+        SimObject simObject = userService.getByUserId(userId);
         return toUserDetails(simObject);
     }
 
@@ -240,7 +240,7 @@ public class IdamSimulatorController {
     public IdamUserInfo getUserInfo(@RequestHeader(AUTHORIZATION) String authorization) {
         LOG.info("Request o/userinfo with authorization {}", authorization);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
-        SimObject simObject = liveMemoryService.getByJwToken(authorization).get();
+        SimObject simObject = userService.getByJwToken(authorization).get();
         return toUserInfo(simObject);
     }
 
@@ -345,7 +345,7 @@ public class IdamSimulatorController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: email is missing or null");
         }
 
-        liveMemoryService.putSimObject(userId, SimObject.builder()
+        userService.putSimObject(userId, SimObject.builder()
             .email(request.getEmail())
             .surname(request.getSurname())
             .forename(request.getForename())
@@ -358,7 +358,7 @@ public class IdamSimulatorController {
     @GetMapping("/testing-support/accounts")
     public IdamUserDetails getUserByEmail(@RequestParam("email") String email) {
         LOG.info("Get user by email: {}", email);
-        SimObject simObject = liveMemoryService.getByEmail(email).orElseThrow(
+        SimObject simObject = userService.getByEmail(email).orElseThrow(
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Idam Simulator: User not found")
         );
         return toUserDetails(simObject);

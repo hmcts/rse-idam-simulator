@@ -32,6 +32,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorServ
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.PersistentStorageService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -80,7 +81,7 @@ public class IdamClientSpringBootTest {
     SimulatorService simulatorService;
 
     @Autowired
-    LiveMemoryService liveMemoryService;
+    UserService userService;
 
     @Autowired
     IdamClient idamClient;
@@ -92,7 +93,7 @@ public class IdamClientSpringBootTest {
         String userName = MYEMAIL_HMCTSTEST_NET;
         addUserToSimulator(BILLY, THE_KID, userName);
         accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
-        assertNotNull(liveMemoryService);
+        assertNotNull(userService);
     }
 
     @Test

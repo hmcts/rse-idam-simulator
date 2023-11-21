@@ -76,12 +76,16 @@ public class SimulatorService {
 
     public void updateTokenInUser(String username, String token) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
-        userInMemory.get().setMostRecentJwToken(token);
+        SimObject user = userInMemory.get();
+        user.setMostRecentJwToken(token);
+        userService.putSimObject(user.getId(), user);
     }
 
     public void updateTokenInUserFromCode(String code, String token) {
         Optional<SimObject> userInMemory = userService.getByCode(code);
-        userInMemory.get().setMostRecentJwToken(token);
+        SimObject user = userInMemory.get();
+        user.setMostRecentJwToken(token);
+        userService.putSimObject(user.getId(), user);
     }
 
     public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
@@ -123,6 +127,7 @@ public class SimulatorService {
         SimObject user = userService.getByName(firstName, lastName).get();
         String newPinCode = generateRandomString(PIN_LENGTH);
         user.setLastGeneratedPin(newPinCode);
+        userService.putSimObject(user.getId(), user);
         PinDetails pin = new PinDetails();
         pin.setPin(newPinCode);
         pin.setUserId(user.getId());
@@ -145,7 +150,9 @@ public class SimulatorService {
 
     private String generateNewCode(Optional<SimObject> userInMemory) {
         String newCode = getNewAuthCode();
-        userInMemory.get().setMostRecentCode(newCode);
+        SimObject user = userInMemory.get();
+        user.setMostRecentCode(newCode);
+        userService.putSimObject(user.getId(), user);
         return newCode;
     }
 
