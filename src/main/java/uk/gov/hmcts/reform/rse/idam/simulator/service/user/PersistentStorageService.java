@@ -15,7 +15,10 @@ public class PersistentStorageService extends LiveMemoryService implements UserS
 
     @SuppressWarnings("unchecked")
     public PersistentStorageService(@Value("${simulator.storage.persistent-file}") String dbFile) {
-        this.db = DBMaker.fileDB(dbFile).fileLockDisable().make();
+        this.db = DBMaker.fileDB(dbFile)
+            .fileLockDisable()
+            .checksumHeaderBypass()
+            .make();
         super.memories = db.hashMap("memories")
             .keySerializer(Serializer.STRING)
             .valueSerializer(Serializer.JAVA)
