@@ -8,8 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 
 import java.time.LocalDateTime;
@@ -28,7 +28,7 @@ public class SimulatorService {
     private JwTokenGeneratorService jwTokenGenerator;
 
     @Autowired
-    private LiveMemoryService liveMemoryService;
+    private UserService userService;
 
     @Value("${simulator.jwt.issuer}")
     private String issuer;
@@ -37,7 +37,7 @@ public class SimulatorService {
     private long tokenExpirationMs;
 
     public String generateAuthTokenFromCode(String code, String serviceId, String grantType) {
-        Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
+        Optional<SimObject> userInMemory = userService.getByCode(code);
         String token = generateAToken(userInMemory.get().getEmail(), serviceId, grantType);
         LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
         if (userInMemory.isEmpty()) {
@@ -52,7 +52,7 @@ public class SimulatorService {
     }
 
     public String generateACachedToken(String userName, String clientID, String grantType) {
-        Optional<SimObject> userInMemory = liveMemoryService.getByEmail(userName);
+        Optional<SimObject> userInMemory = userService.getByEmail(userName);
         if (userInMemory.isEmpty()) {
             LOG.warn("No User for this userName " + userName
                          + ". Usually this happens because the user has not been added to the system"
@@ -62,16 +62,16 @@ public class SimulatorService {
                 "Idam Simulator: No User for this userName " + userName
             );
         }
-        Boolean tokenExpired = liveMemoryService.getByEmail(userName).stream()
+        Boolean tokenExpired = userService.getByEmail(userName).stream()
             .map(SimObject::getMostRecentJwTokenUnixTime)
             .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst().get();
 
-        if (tokenExpired || liveMemoryService.getByEmail(userName).get().getMostRecentJwToken() == null) {
+        if (tokenExpired || userService.getByEmail(userName).get().getMostRecentJwToken() == null) {
             LOG.info("Token not existing or expired and will be regenerated");
             return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
         }
         LOG.info("Use token in cache");
-        return liveMemoryService.getByEmail(userName).get().getMostRecentJwToken();
+        return userService.getByEmail(userName).get().getMostRecentJwToken();
     }
 
     public void updateTokenInUser(String username, String token) {
@@ -80,12 +80,12 @@ public class SimulatorService {
     }
 
     public void updateTokenInUserFromCode(String code, String token) {
-        Optional<SimObject> userInMemory = liveMemoryService.getByCode(code);
+        Optional<SimObject> userInMemory = userService.getByCode(code);
         userInMemory.get().setMostRecentJwToken(token);
     }
 
     public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
-        Optional<SimObject> userInMemory = liveMemoryService.getByEmail(username);
+        Optional<SimObject> userInMemory = userService.getByEmail(username);
         if (userInMemory.isEmpty()) {
             LOG.warn("User " + username + " not exiting");
             throw new ResponseStatusException(
@@ -97,7 +97,7 @@ public class SimulatorService {
     }
 
     public Optional<SimObject> checkUserInMemoryNotEmptyByPin(String pin) {
-        Optional<SimObject> userInMemory = liveMemoryService.getByPin(pin);
+        Optional<SimObject> userInMemory = userService.getByPin(pin);
         if (userInMemory.isEmpty()) {
             LOG.warn("User with pin " + pin + " not found");
             throw new ResponseStatusException(
@@ -120,7 +120,7 @@ public class SimulatorService {
     }
 
     public PinDetails createPinDetails(String firstName, String lastName) {
-        SimObject user = liveMemoryService.getByName(firstName, lastName).get();
+        SimObject user = userService.getByName(firstName, lastName).get();
         String newPinCode = generateRandomString(PIN_LENGTH);
         user.setLastGeneratedPin(newPinCode);
         PinDetails pin = new PinDetails();
@@ -137,7 +137,7 @@ public class SimulatorService {
             LOG.warn("Bearer must start by Bearer");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: Bearer must start by Bearer");
         }
-        if (liveMemoryService.getByJwToken(authorization).isEmpty()) {
+        if (userService.getByJwToken(authorization).isEmpty()) {
             LOG.warn("User not authenticated");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: User not authenticated");
         }

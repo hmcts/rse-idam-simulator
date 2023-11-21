@@ -27,7 +27,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;

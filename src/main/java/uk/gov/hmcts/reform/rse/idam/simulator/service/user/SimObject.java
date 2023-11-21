@@ -1,15 +1,16 @@
-package uk.gov.hmcts.reform.rse.idam.simulator.service.memory;
+package uk.gov.hmcts.reform.rse.idam.simulator.service.user;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.List;
 
 @EqualsAndHashCode
 @Builder
 @Getter
-public class SimObject {
+public class SimObject implements Serializable {
 
     public static final String BEARER_ = "Bearer ";
 

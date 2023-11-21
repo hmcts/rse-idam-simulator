@@ -1,7 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service;
 
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 
 import java.util.Arrays;
 
