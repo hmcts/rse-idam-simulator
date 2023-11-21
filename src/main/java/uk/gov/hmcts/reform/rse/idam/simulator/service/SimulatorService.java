@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
