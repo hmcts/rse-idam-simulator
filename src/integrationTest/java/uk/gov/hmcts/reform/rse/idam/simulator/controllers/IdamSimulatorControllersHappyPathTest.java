@@ -13,10 +13,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorDataFactory;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 
 import java.util.Optional;
 
