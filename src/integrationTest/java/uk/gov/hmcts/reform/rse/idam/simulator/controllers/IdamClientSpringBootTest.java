@@ -27,10 +27,12 @@ import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserInfo;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.PersistentStorageService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -57,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     "PMD.JUnitTestsShouldIncludeAssert", "PMD.LawOfDemeter", "PMD.ExcessiveImports"})
 @EnableFeignClients(basePackages = {"uk.gov.hmcts.reform.idam.client"})
 @SpringBootTest(classes = {IdamClient.class, IdamApi.class, IdamSimulatorController.class,
-    LiveMemoryService.class, SimulatorService.class, JsonWebKeyService.class,
+    LiveMemoryService.class, PersistentStorageService.class, SimulatorService.class, JsonWebKeyService.class,
     JwTokenGeneratorService.class, OpenIdConfigService.class},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @PropertySource("classpath:application.yaml")
@@ -79,7 +81,7 @@ public class IdamClientSpringBootTest {
     SimulatorService simulatorService;
 
     @Autowired
-    LiveMemoryService liveMemoryService;
+    UserService userService;
 
     @Autowired
     IdamClient idamClient;
@@ -91,7 +93,7 @@ public class IdamClientSpringBootTest {
         String userName = MYEMAIL_HMCTSTEST_NET;
         addUserToSimulator(BILLY, THE_KID, userName);
         accessToken = fetchAccessToken(MYEMAIL_HMCTSTEST_NET);
-        assertNotNull(liveMemoryService);
+        assertNotNull(userService);
     }
 
     @Test

@@ -8,6 +8,9 @@ simulator:
   openid:
     base-url: http://localhost:5556
     base-url-outside-network: http://localhost:5556
+  storage:
+    type: memory # memory or persistent
+    persistent-file: users.db # used if storage type is persistent
 
 logging:
   level:

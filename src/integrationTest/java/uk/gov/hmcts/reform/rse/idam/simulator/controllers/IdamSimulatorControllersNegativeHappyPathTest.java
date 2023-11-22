@@ -9,9 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
-import uk.gov.hmcts.reform.rse.idam.simulator.service.memory.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JsonWebKeyService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,7 +34,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     private SimulatorService simulatorService;
 
     @MockBean
-    private LiveMemoryService liveMemoryService;
+    private UserService userService;
 
     @Autowired
     private transient MockMvc mockMvc;
@@ -43,7 +43,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     @Test
     public void legacyEndpointOauth2Token() throws Exception {
         assertNotNull(simulatorService);
-        assertNotNull(liveMemoryService);
+        assertNotNull(userService);
         mockMvc.perform(post("/oauth2/authorize")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                             .header(AUTHORIZATION, "wrongOne")
@@ -57,7 +57,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     @DisplayName("Grant types must be only authorization_code")
     @Test
     public void oauth2tokenCredentialChecks() throws Exception {
-        assertNotNull(liveMemoryService);
+        assertNotNull(userService);
 
         postOauthToken("Wrong", VALIDE_CODE, status().isBadRequest());
         postOauthToken("authorization_code", VALIDE_CODE, status().isOk());
@@ -67,7 +67,7 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     @DisplayName("Grant type authorization_code required a code")
     @Test
     public void oauth2tokenCredentialAuthCodeTest() throws Exception {
-        assertNotNull(liveMemoryService);
+        assertNotNull(userService);
 
         postOauthToken("authorization_code", "", status().isBadRequest());
         postOauthToken("client_credentials", "", status().isBadRequest());
