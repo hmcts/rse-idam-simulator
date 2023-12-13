@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -208,6 +209,16 @@ public class IdamSimulatorController {
         return createUserDetailsList();
     }
 
+    @PatchMapping("/api/v1/users/{userId}")
+    public IdamUserDetails updateUserDetails(
+        @RequestHeader(AUTHORIZATION) String authorization,
+        @RequestBody IdamUserDetails updateUserDetails,
+        @PathVariable("userId") String userId) {
+        LOG.info("Request Update User Details {}", userId);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
+        return toUserDetails(simulatorService.updateUser(userId, updateUserDetails));
+    }
+
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
                                         @RequestParam(name = REDIRECT_URI, required = false) final String redirectUri,
@@ -308,6 +319,7 @@ public class IdamSimulatorController {
         res.setId(simObject.getId());
         res.setSurname(simObject.getSurname());
         res.setRoles(simObject.getRoles());
+        res.setActive(simObject.isActive());
         return res;
     }
 
@@ -351,6 +363,7 @@ public class IdamSimulatorController {
             .forename(request.getForename())
             .id(userId)
             .roles(request.getRoles().stream().map(RoleDetails::getCode).collect(Collectors.toList()))
+            .active(true)
             .build());
         return new IdamUserAddReponse(userId);
     }

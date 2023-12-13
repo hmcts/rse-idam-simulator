@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
@@ -72,6 +74,20 @@ public class SimulatorService {
         }
         LOG.info("Use token in cache");
         return userService.getByEmail(userName).get().getMostRecentJwToken();
+    }
+
+    public SimObject updateUser(String userId, IdamUserDetails user) {
+        SimObject currentUser = userService.getByUserId(userId);
+        SimObject updatedUser = SimObject.builder()
+            .id(currentUser.getId())
+            .email(Objects.requireNonNullElse(user.getEmail(), currentUser.getEmail()))
+            .forename(Objects.requireNonNullElse(user.getForename(), currentUser.getForename()))
+            .surname(Objects.requireNonNullElse(user.getSurname(), currentUser.getSurname()))
+            .roles(Objects.requireNonNullElse(user.getRoles(), currentUser.getRoles()))
+            .active(user.isActive())
+            .build();
+        userService.putSimObject(userId, updatedUser);
+        return updatedUser;
     }
 
     public void updateTokenInUser(String username, String token) {
