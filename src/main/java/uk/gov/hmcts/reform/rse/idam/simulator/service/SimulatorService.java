@@ -90,6 +90,17 @@ public class SimulatorService {
         return updatedUser;
     }
 
+    public void addUser(String userId, IdamUserDetails addUserDetails) {
+        userService.putSimObject(userId, SimObject.builder()
+            .email(addUserDetails.getEmail())
+            .surname(addUserDetails.getSurname())
+            .forename(addUserDetails.getForename())
+            .id(userId)
+            .roles(addUserDetails.getRoles())
+            .active(true)
+            .build());
+    }
+
     public void updateTokenInUser(String username, String token) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
         SimObject user = userInMemory.get();

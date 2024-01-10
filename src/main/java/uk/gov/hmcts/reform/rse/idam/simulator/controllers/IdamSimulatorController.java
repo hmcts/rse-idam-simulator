@@ -219,6 +219,20 @@ public class IdamSimulatorController {
         return toUserDetails(simulatorService.updateUser(userId, updateUserDetails));
     }
 
+    @PostMapping("/api/v1/users/registration")
+    public ResponseEntity<Object> addUserDetails(
+        @RequestHeader(AUTHORIZATION) String authorization,
+        @RequestBody IdamUserDetails addUserDetails) {
+        if (addUserDetails.getEmail() == null || addUserDetails.getEmail().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: email is missing or null");
+        }
+        String userId = UUID.nameUUIDFromBytes(addUserDetails.getEmail().getBytes()).toString();
+        LOG.info("Request Add User Details {}", userId);
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
+        simulatorService.addUser(userId, addUserDetails);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
                                         @RequestParam(name = REDIRECT_URI, required = false) final String redirectUri,
