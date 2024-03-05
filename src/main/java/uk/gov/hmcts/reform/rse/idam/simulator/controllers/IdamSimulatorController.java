@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -188,6 +189,24 @@ public class IdamSimulatorController {
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = userService.getByJwToken(authorization).get();
         return toUserDetails(simObject);
+    }
+
+    @PostMapping("/api/v1/users/{userId}/roles")
+    public ResponseEntity<Object> addUserRoles(
+        @RequestBody Object updateUserDetails,
+        @PathVariable("userId") String userId) {
+        LOG.info("Request add user roles with userID: {}", userId);
+        simulatorService.addUserRoles(userId, updateUserDetails);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/api/v1/users/{userId}/roles/{roleName}")
+    public ResponseEntity<Object> deleteUserRoles(
+        @PathVariable("userId") String userId,
+        @PathVariable("roleName") String roleName) {
+        LOG.info("Request delete user role with name: {}", roleName);
+        simulatorService.deleteUserRole(userId, roleName);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/api/v1/users/{userId}")
