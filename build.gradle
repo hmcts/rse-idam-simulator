@@ -67,7 +67,7 @@ task integration(type: Test) {
 
 checkstyle {
   maxWarnings = 0
-  toolVersion = '8.29'
+  toolVersion = '10.21.0'
   getConfigDirectory().set(new File(rootDir, 'config/checkstyle'))
 }
 
