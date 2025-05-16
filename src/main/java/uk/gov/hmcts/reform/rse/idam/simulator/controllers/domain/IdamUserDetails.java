@@ -10,7 +10,7 @@ public class IdamUserDetails {
     private String forename;
     private String surname;
     private List<String> roles;
-
+    private boolean active = true;
 
     public String getId() {
         return id;
@@ -50,5 +50,13 @@ public class IdamUserDetails {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }
