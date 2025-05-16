@@ -124,7 +124,7 @@ dependencies {
   implementation group: 'org.mapdb', name: 'mapdb', version: '3.1.0'
 
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'com.github.hmcts', name: 'idam-java-client', version: '3.0.2'
+  testImplementation group: 'com.github.hmcts', name: 'idam-java-client', version: '3.0.4'
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-contract-wiremock', version: '4.2.1'
 }
