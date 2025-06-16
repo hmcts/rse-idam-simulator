@@ -7,14 +7,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamUserDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.PinDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.LawOfDemeter"})
 @Component
@@ -72,6 +78,76 @@ public class SimulatorService {
         }
         LOG.info("Use token in cache");
         return userService.getByEmail(userName).get().getMostRecentJwToken();
+    }
+
+    public SimObject updateUser(String userId, IdamUserDetails user) {
+        SimObject currentUser = userService.getByUserId(userId);
+        SimObject updatedUser = SimObject.builder()
+            .id(currentUser.getId())
+            .email(Objects.requireNonNullElse(user.getEmail(), currentUser.getEmail()))
+            .forename(Objects.requireNonNullElse(user.getForename(), currentUser.getForename()))
+            .surname(Objects.requireNonNullElse(user.getSurname(), currentUser.getSurname()))
+            .roles(Objects.requireNonNullElse(user.getRoles(), currentUser.getRoles()))
+            .active(user.isActive())
+            .build();
+        userService.putSimObject(userId, updatedUser);
+        return updatedUser;
+    }
+
+    public SimObject deleteUserRole(String userId, String roleName) {
+        SimObject currentUser = userService.getByUserId(userId);
+        List<String> currentRoles = currentUser.getRoles();
+        List<String> newUserRoles = currentRoles.stream()
+            .filter(role -> !role.equals(roleName))
+            .collect(Collectors.toList());
+        SimObject updatedUser = SimObject.builder()
+                .id(currentUser.getId())
+                .email(currentUser.getEmail())
+                .forename(currentUser.getForename())
+                .surname(currentUser.getSurname())
+                .roles(newUserRoles)
+                .active(currentUser.isActive())
+                .build();
+        userService.putSimObject(userId, updatedUser);
+        return updatedUser;
+    }
+
+    public SimObject addUserRoles(String userId, Object newRolesObject) {
+        SimObject currentUser = userService.getByUserId(userId);
+        List<String> currentUserRoles = new ArrayList<>(currentUser.getRoles());
+        if (newRolesObject instanceof ArrayList) {
+            @SuppressWarnings("unchecked")
+            ArrayList<LinkedHashMap<String, String>> newRoles =
+                (ArrayList<LinkedHashMap<String, String>>) newRolesObject;
+            for (LinkedHashMap<String, String> roleMap : newRoles) {
+                for (String value : roleMap.values()) {
+                    if (!currentUserRoles.contains(value)) {
+                        currentUserRoles.add(value);
+                    }
+                }
+            }
+        }
+        SimObject updatedUser = SimObject.builder()
+                .id(currentUser.getId())
+                .email(currentUser.getEmail())
+                .forename(currentUser.getForename())
+                .surname(currentUser.getSurname())
+                .roles(currentUserRoles)
+                .active(currentUser.isActive())
+                .build();
+        userService.putSimObject(userId, updatedUser);
+        return updatedUser;
+    }
+
+    public void addUser(String userId, IdamUserDetails addUserDetails) {
+        userService.putSimObject(userId, SimObject.builder()
+            .email(addUserDetails.getEmail())
+            .surname(addUserDetails.getSurname())
+            .forename(addUserDetails.getForename())
+            .id(userId)
+            .roles(addUserDetails.getRoles())
+            .active(true)
+            .build());
     }
 
     public void updateTokenInUser(String username, String token) {
