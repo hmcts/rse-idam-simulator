@@ -40,14 +40,14 @@ public class LoginController {
     public String loginPage(Model model,
                             @RequestParam("redirect_uri") String redirectUri,
                             @RequestParam("client_id") String clientId,
-                            @RequestParam("state") String state,
+                            @RequestParam(value = "state", required = false) String state,
                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
         String loginFormAction = "/login?"
             + "client_id=" + clientId
             + "&redirect_uri=" + redirectUri
             + "&ui_local=" + uiLocal
             + "&response_type=code"
-            + "&state=" + state;
+            + "&state=" + (state != null ? state : "");
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
         return "login";
