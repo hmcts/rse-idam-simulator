@@ -38,6 +38,10 @@ jobs:
         tenant-id: 531ff96d-0ae9-462a-8d2d-bec7c0b42082 # HMCTS.NET
         allow-no-subscriptions: true
 
+    - name: "ACR Login - hmctsprod"
+      run: |
+        az acr login --name hmctsprod
+        
     - run: |
         docker buildx create --name mybuilder --use
         docker buildx build --push --platform linux/amd64,linux/arm64 -t ${{ env.NEW_AZURE_CONTAINER_REGISTRY_URL }}/hmcts/rse/rse-idam-simulator:latest .
