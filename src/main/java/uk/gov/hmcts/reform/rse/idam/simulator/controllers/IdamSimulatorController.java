@@ -470,9 +470,11 @@ public class IdamSimulatorController {
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam(REDIRECT_URI, redirectUri)
             .queryParam(CLIENT_ID, clientId)
-            .queryParam("state", state != null ? state : "")
             .queryParam(UI_LOCAL, DEFAULT_UI_LOCAL)
             .queryParam("response_type", responseType != null ? responseType : "code");
+        if (state != null && !state.isBlank()) {
+            builder.queryParam("state", state);
+        }
         if (nonce != null && !nonce.isBlank()) {
             builder.queryParam("nonce", nonce);
         }

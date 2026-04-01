@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 
 import java.util.Arrays;
@@ -44,13 +45,18 @@ public class LoginController {
                             @RequestParam(value = "state", required = false) String state,
                             @RequestParam(value = "nonce", required = false) String nonce,
                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
-        String loginFormAction = "/login?"
-            + "client_id=" + clientId
-            + "&redirect_uri=" + redirectUri
-            + "&ui_local=" + uiLocal
-            + "&response_type=code"
-            + "&nonce=" + (nonce != null ? nonce : "")
-            + "&state=" + (state != null ? state : "");
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
+            .queryParam("client_id", clientId)
+            .queryParam("redirect_uri", redirectUri)
+            .queryParam("ui_local", uiLocal)
+            .queryParam("response_type", "code");
+        if (nonce != null && !nonce.isBlank()) {
+            builder.queryParam("nonce", nonce);
+        }
+        if (state != null && !state.isBlank()) {
+            builder.queryParam("state", state);
+        }
+        String loginFormAction = builder.build().toUriString();
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
         return "login";
@@ -63,7 +69,7 @@ public class LoginController {
                                             @RequestParam("username") String username,
                                             @RequestParam("redirect_uri") String redirectUri,
                                             @RequestParam("client_id") String clientId,
-                                            @RequestParam("state") String state,
+                                            @RequestParam(value = "state", required = false) String state,
                                             @RequestParam("response_type") String responseType,
                                             @RequestParam(value = "nonce", required = false) String nonce,
                                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal
@@ -92,11 +98,14 @@ public class LoginController {
         httpHeaders.add(HttpHeaders.SET_COOKIE, "idam_ui_locales=" + uiLocal);
 
         String code = simulatorService.geAuthCodeFromUserName(username, nonce);
-        String locationValue = redirectUri
-            + "?code=" + code
-            + "&state=" + state
-            + "&client_id=" + clientId
-            + "&iss=" + jwtIssuer;
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(redirectUri)
+            .queryParam("code", code)
+            .queryParam("client_id", clientId)
+            .queryParam("iss", jwtIssuer);
+        if (state != null && !state.isBlank()) {
+            builder.queryParam("state", state);
+        }
+        String locationValue = builder.build().toUriString();
 
         httpHeaders.add("Location", locationValue);
         LOG.info("Location " + locationValue);
