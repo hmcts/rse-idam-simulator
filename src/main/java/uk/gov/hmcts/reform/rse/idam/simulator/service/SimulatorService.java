@@ -98,6 +98,13 @@ public class SimulatorService {
         userService.putSimObject(user.getId(), user);
     }
 
+    public void invalidateAuthCode(String code) {
+        SimObject user = checkUserInMemoryNotEmptyByCode(code);
+        user.setMostRecentCode(null);
+        user.setMostRecentNonce(null);
+        userService.putSimObject(user.getId(), user);
+    }
+
     public Optional<SimObject> checkUserInMemoryNotEmptyByUserName(String username) {
         Optional<SimObject> userInMemory = userService.getByEmail(username);
         if (userInMemory.isEmpty()) {
@@ -145,10 +152,7 @@ public class SimulatorService {
 
     public String geAuthCodeFromUserName(String email, String nonce) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
-        String mostRecentCode = userInMemory.get().getMostRecentCode();
-        if (mostRecentCode == null || mostRecentCode.isEmpty()) {
-            mostRecentCode = generateNewCode(userInMemory);
-        }
+        String mostRecentCode = generateNewCode(userInMemory);
         SimObject user = userInMemory.get();
         user.setMostRecentNonce(nonce);
         userService.putSimObject(user.getId(), user);

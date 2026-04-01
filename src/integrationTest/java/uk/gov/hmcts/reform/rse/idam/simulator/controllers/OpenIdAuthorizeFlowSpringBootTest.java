@@ -207,6 +207,19 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
+    void authorizationCodesAreSingleUseAndRefreshedPerFlow() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Grace", "Hopper");
+
+        String firstCode = authorizeForCode(email);
+        String secondCode = authorizeForCode(email);
+        assertTrue(!firstCode.equals(secondCode));
+
+        exchangeCode(secondCode).andExpect(status().isOk());
+        exchangeCode(secondCode).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void openIdTokenRejectsMalformedBasicAuthorizationHeader() throws Exception {
         mockMvc.perform(post("/o/token")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -241,5 +254,32 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andReturn();
         JsonNode discoveryJson = objectMapper.readTree(discoveryResult.getResponse().getContentAsString());
         return discoveryJson.path("issuer").asText();
+    }
+
+    private String authorizeForCode(String email) throws Exception {
+        MvcResult authorizeResult = mockMvc.perform(post("/o/authorize")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI)
+                .param("response_type", "code")
+                .param("login_hint", email))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String redirectLocation = authorizeResult.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertNotNull(redirectLocation);
+        return UriComponentsBuilder.fromUriString(redirectLocation).build().getQueryParams().getFirst("code");
+    }
+
+    private org.springframework.test.web.servlet.ResultActions exchangeCode(String code) throws Exception {
+        return mockMvc.perform(post("/o/token")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .header(
+                HttpHeaders.AUTHORIZATION,
+                "Basic " + HttpHeaders.encodeBasicAuth(CLIENT_ID, "a-secret", StandardCharsets.UTF_8)
+            )
+            .param("grant_type", "authorization_code")
+            .param("redirect_uri", REDIRECT_URI)
+            .param("code", code));
     }
 }

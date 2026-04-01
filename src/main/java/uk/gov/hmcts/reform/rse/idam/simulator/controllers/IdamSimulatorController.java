@@ -242,6 +242,7 @@ public class IdamSimulatorController {
             refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
             idToken = simulatorService.generateIdTokenFromCode(code, clientId, grantType);
             simulatorService.updateTokenInUserFromCode(code, token);
+            simulatorService.invalidateAuthCode(code);
         } else {
             if (username == null || username.isBlank()) {
                 throw new ResponseStatusException(
