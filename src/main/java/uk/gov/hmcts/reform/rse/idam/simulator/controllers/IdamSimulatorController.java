@@ -209,16 +209,19 @@ public class IdamSimulatorController {
     }
 
     @PostMapping(value = "/o/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public TokenResponse getOpenIdToken(@RequestParam(CLIENT_ID) final String clientId,
+    public TokenResponse getOpenIdToken(@RequestParam(value = CLIENT_ID, required = false) String clientId,
                                         @RequestParam(name = REDIRECT_URI, required = false) final String redirectUri,
                                         @RequestParam(value = "client_secret", required = false)
                                             final String clientSecret,
                                         @RequestParam("grant_type") final String grantType,
-                                        @RequestParam("username") final String username,
+                                        @RequestParam(value = "username", required = false) final String username,
                                         @RequestParam(value = "password", required = false)
                                             final String password,
-                                        @RequestParam("scope") final String scope,
-                                        @RequestParam(name = "code", required = false) final String code) {
+                                        @RequestParam(value = "scope", required = false) final String scope,
+                                        @RequestParam(name = "code", required = false) final String code,
+                                        @RequestHeader(value = AUTHORIZATION, required = false)
+                                            final String authorization) {
+        clientId = resolveClientId(clientId, authorization);
         LOG.info(
             "Request OpenId Token for clientId {} Username {} scope {} and code {}",
             clientId,
@@ -226,11 +229,31 @@ public class IdamSimulatorController {
             scope,
             code
         );
-        String token = simulatorService.generateACachedToken(username, clientId, grantType);
-        String refreshToken = simulatorService.generateAToken(username, clientId, grantType);
-        String idToken = simulatorService.generateAToken(username, clientId, grantType);
+
+        String token;
+        String refreshToken;
+        String idToken;
+
+        if (GRANT_TYPE_AUTHORIZATION_CODE.equalsIgnoreCase(grantType)) {
+            checkCode(code);
+            token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+            refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+            idToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+            simulatorService.updateTokenInUserFromCode(code, token);
+        } else {
+            if (username == null || username.isBlank()) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Idam Simulator: Username is required for grant type " + grantType
+                );
+            }
+            token = simulatorService.generateACachedToken(username, clientId, grantType);
+            refreshToken = simulatorService.generateAToken(username, clientId, grantType);
+            idToken = simulatorService.generateAToken(username, clientId, grantType);
+            simulatorService.updateTokenInUser(username, token);
+        }
+
         LOG.info("Access Open Id Token returned {}", token);
-        simulatorService.updateTokenInUser(username, token);
         return new TokenResponse(token, String.valueOf(expiration), idToken, refreshToken,
                                  "openid profile roles", "Bearer"
         );
@@ -362,6 +385,17 @@ public class IdamSimulatorController {
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Idam Simulator: User not found")
         );
         return toUserDetails(simObject);
+    }
+
+    private String resolveClientId(String clientId, String authorization) {
+        if (clientId != null && !clientId.isBlank()) {
+            return clientId;
+        }
+        if (authorization == null || !authorization.startsWith("Basic ")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: client_id is required");
+        }
+        String[] creds = new String(Base64.getDecoder().decode(authorization.replace("Basic ", ""))).split(":");
+        return creds[0];
     }
 
 }
