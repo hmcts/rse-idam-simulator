@@ -83,6 +83,9 @@ public class IdamSimulatorController {
     @Value("${simulator.openid.base-url-outside-network}")
     private String idamBaseUrlOutsideNetwork;
 
+    @Value("${simulator.jwt.issuer}")
+    private String jwtIssuer;
+
     /*
     This tactical endpoint is replaced by OpenID /o/authorize.
     */
@@ -476,7 +479,7 @@ public class IdamSimulatorController {
         if (clientId != null && !clientId.isBlank()) {
             builder.queryParam(CLIENT_ID, clientId);
         }
-        builder.queryParam("iss", idamBaseUrl);
+        builder.queryParam("iss", jwtIssuer);
         return builder.build().toUriString();
     }
 

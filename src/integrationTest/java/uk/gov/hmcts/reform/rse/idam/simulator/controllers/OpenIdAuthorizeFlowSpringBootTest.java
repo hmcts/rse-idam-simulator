@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
+import com.nimbusds.jwt.SignedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
         String email = uniqueEmail();
         addUser(email, "Billy", "Kid");
 
+        String discoveryIssuer = fetchDiscoveryIssuer();
         MvcResult authorizeResult = mockMvc.perform(post("/o/authorize")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .param("client_id", CLIENT_ID)
@@ -80,6 +82,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
         var redirectParams = UriComponentsBuilder.fromUriString(redirectLocation).build().getQueryParams();
         assertEquals("some-state", redirectParams.getFirst("state"));
         assertEquals(CLIENT_ID, redirectParams.getFirst("client_id"));
+        assertEquals(discoveryIssuer, redirectParams.getFirst("iss"));
         String code = redirectParams.getFirst("code");
         assertNotNull(code);
 
@@ -98,8 +101,11 @@ class OpenIdAuthorizeFlowSpringBootTest {
 
         JsonNode tokenJson = objectMapper.readTree(tokenResult.getResponse().getContentAsString());
         String accessToken = tokenJson.path("access_token").asText();
+        String idToken = tokenJson.path("id_token").asText();
         assertNotNull(accessToken);
         assertTrue(!accessToken.isBlank());
+        assertNotNull(idToken);
+        assertEquals(discoveryIssuer, SignedJWT.parse(idToken).getJWTClaimsSet().getIssuer());
 
         mockMvc.perform(get("/o/userinfo")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
@@ -171,5 +177,13 @@ class OpenIdAuthorizeFlowSpringBootTest {
 
     private String uniqueEmail() {
         return "oidc-" + UUID.randomUUID() + "@hmcts.net";
+    }
+
+    private String fetchDiscoveryIssuer() throws Exception {
+        MvcResult discoveryResult = mockMvc.perform(get("/o/.well-known/openid-configuration"))
+            .andExpect(status().isOk())
+            .andReturn();
+        JsonNode discoveryJson = objectMapper.readTree(discoveryResult.getResponse().getContentAsString());
+        return discoveryJson.path("issuer").asText();
     }
 }
