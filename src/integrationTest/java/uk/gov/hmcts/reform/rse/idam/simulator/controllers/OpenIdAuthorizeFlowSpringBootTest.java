@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -191,6 +192,42 @@ class OpenIdAuthorizeFlowSpringBootTest {
         assertEquals(CLIENT_ID, queryParams.getFirst("client_id"));
         assertEquals("browser-state", queryParams.getFirst("state"));
         assertEquals("code", queryParams.getFirst("response_type"));
+    }
+
+    @Test
+    void authorizeWithoutStateOmitsStateFromLoginAndCallback() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "No", "State");
+
+        MvcResult authorizeResult = mockMvc.perform(get("/o/authorize")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI)
+                .param("response_type", "code"))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String loginLocation = authorizeResult.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertNotNull(loginLocation);
+        var loginQueryParams = UriComponentsBuilder.fromUriString(loginLocation).build().getQueryParams();
+        assertNull(loginQueryParams.getFirst("state"));
+
+        MvcResult loginResult = mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", email)
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("response_type", "code")
+                .param("ui_local", "en"))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String redirectLocation = loginResult.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertNotNull(redirectLocation);
+        var redirectParams = UriComponentsBuilder.fromUriString(redirectLocation).build().getQueryParams();
+        assertNull(redirectParams.getFirst("state"));
+        assertNotNull(redirectParams.getFirst("code"));
+        assertEquals(CLIENT_ID, redirectParams.getFirst("client_id"));
     }
 
     @Test
