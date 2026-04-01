@@ -1,9 +1,9 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
-import com.nimbusds.jwt.SignedJWT;
-import jakarta.servlet.http.Cookie;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jwt.SignedJWT;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -65,8 +65,6 @@ class OpenIdAuthorizeFlowSpringBootTest {
     void authorizeWithLoginHintIssuesRedeemableCode() throws Exception {
         String email = uniqueEmail();
         addUser(email, "Billy", "Kid");
-
-        String discoveryIssuer = fetchDiscoveryIssuer();
         MvcResult authorizeResult = mockMvc.perform(post("/o/authorize")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .param("client_id", CLIENT_ID)
@@ -81,6 +79,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
         assertNotNull(redirectLocation);
         assertTrue(redirectLocation.startsWith(REDIRECT_URI));
 
+        String discoveryIssuer = fetchDiscoveryIssuer();
         var redirectParams = UriComponentsBuilder.fromUriString(redirectLocation).build().getQueryParams();
         assertEquals("some-state", redirectParams.getFirst("state"));
         assertEquals(CLIENT_ID, redirectParams.getFirst("client_id"));

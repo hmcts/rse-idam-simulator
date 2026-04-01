@@ -462,7 +462,11 @@ public class IdamSimulatorController {
         }
     }
 
-    private String buildLoginLocation(String clientId, String redirectUri, String state, String responseType, String nonce) {
+    private String buildLoginLocation(String clientId,
+                                      String redirectUri,
+                                      String state,
+                                      String responseType,
+                                      String nonce) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam(REDIRECT_URI, redirectUri)
             .queryParam(CLIENT_ID, clientId)
