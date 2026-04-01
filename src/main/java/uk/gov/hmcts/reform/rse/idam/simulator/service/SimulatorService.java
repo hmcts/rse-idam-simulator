@@ -146,10 +146,6 @@ public class SimulatorService {
         return geAuthCodeFromUserName(username, null);
     }
 
-    public String geAuthCodeFromUserName(String email) {
-        return geAuthCodeFromUserName(email, null);
-    }
-
     public String geAuthCodeFromUserName(String email, String nonce) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
         String mostRecentCode = generateNewCode(userInMemory);
