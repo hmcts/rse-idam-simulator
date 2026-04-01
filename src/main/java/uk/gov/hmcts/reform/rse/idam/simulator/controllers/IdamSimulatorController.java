@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.AuthenticateUserResponse;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.GeneratePinRequest;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser;
@@ -36,6 +37,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +59,8 @@ public class IdamSimulatorController {
     public static final String CLIENT_ID = "client_id";
     public static final String REDIRECT_URI = "redirect_uri";
     private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
+    private static final String UI_LOCAL = "ui_local";
+    private static final String DEFAULT_UI_LOCAL = "en";
 
     @Autowired
     private OpenIdConfigService openIdConfigService;
@@ -115,12 +119,7 @@ public class IdamSimulatorController {
                                      @RequestHeader(value = AUTHORIZATION, required = false)
                                          final String authorization) {
 
-        // Take client details from authorization if not in params.
-        if (clientId == null || clientSecret == null) {
-            var creds = new String(Base64.getDecoder().decode(authorization.replace("Basic ", "")))
-                .split(":");
-            clientId = creds[0];
-        }
+        clientId = resolveClientId(clientId, authorization);
         LOG.warn("oauth2/token endpoint is deprecated!");
         LOG.info("Request oauth2 token for grantType {} code {} and clientId {}", grantType, code, clientId);
 
@@ -297,13 +296,17 @@ public class IdamSimulatorController {
         @RequestParam(value = "acr_values", required = false) String acrValues,
         @RequestParam(value = "id_token_hint", required = false) String idTokenHint,
         @RequestParam(value = "login_hint", required = false) String loginHint) {
+        return authorize(clientId, redirectUri, state, responseType, loginHint);
+    }
 
-        LOG.info("Request OpenId Connect Code for clientId {}", clientId);
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        String generatedCode = simulatorService.getNewAuthCode();
-        httpHeaders.add("Location", redirectUri + "?code=" + generatedCode);
-        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    @GetMapping("/o/authorize")
+    public ResponseEntity<Object> getToAuthorize(
+        @RequestParam(value = "client_id", required = false) String clientId,
+        @RequestParam(value = "redirect_uri", required = false) String redirectUri,
+        @RequestParam(value = "state", required = false) String state,
+        @RequestParam(value = "response_type", required = false) String responseType,
+        @RequestParam(value = "login_hint", required = false) String loginHint) {
+        return authorize(clientId, redirectUri, state, responseType, loginHint);
     }
 
     @GetMapping(value = "/health")
@@ -391,11 +394,90 @@ public class IdamSimulatorController {
         if (clientId != null && !clientId.isBlank()) {
             return clientId;
         }
+        String[] credentials = extractBasicCredentials(authorization);
+        String resolvedClientId = credentials[0];
+        if (resolvedClientId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: client_id is required");
+        }
+        return resolvedClientId;
+    }
+
+    private String[] extractBasicCredentials(String authorization) {
         if (authorization == null || !authorization.startsWith("Basic ")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: client_id is required");
         }
-        String[] creds = new String(Base64.getDecoder().decode(authorization.replace("Basic ", ""))).split(":");
-        return creds[0];
+        try {
+            String decoded = new String(
+                Base64.getDecoder().decode(authorization.substring("Basic ".length())),
+                StandardCharsets.UTF_8
+            );
+            String[] credentials = decoded.split(":", 2);
+            if (credentials.length < 2) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Idam Simulator: Invalid Basic authorization header"
+                );
+            }
+            return credentials;
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Idam Simulator: Invalid Basic authorization header",
+                exception
+            );
+        }
+    }
+
+    private ResponseEntity<Object> authorize(String clientId,
+                                             String redirectUri,
+                                             String state,
+                                             String responseType,
+                                             String loginHint) {
+        LOG.info("Request OpenId Connect Code for clientId {} loginHint {}", clientId, loginHint);
+        checkAuthorizeRequiredParams(clientId, redirectUri);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        if (loginHint == null || loginHint.isBlank()) {
+            httpHeaders.add("Location", buildLoginLocation(clientId, redirectUri, state, responseType));
+            return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+        }
+
+        String generatedCode = simulatorService.geAuthCodeFromUserName(loginHint);
+        httpHeaders.add("Location", buildAuthorizationCodeLocation(redirectUri, generatedCode, state, clientId));
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    private void checkAuthorizeRequiredParams(String clientId, String redirectUri) {
+        if (clientId == null || clientId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: client_id is required");
+        }
+        if (redirectUri == null || redirectUri.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: redirect_uri is required");
+        }
+    }
+
+    private String buildLoginLocation(String clientId, String redirectUri, String state, String responseType) {
+        return UriComponentsBuilder.fromPath("/login")
+            .queryParam(REDIRECT_URI, redirectUri)
+            .queryParam(CLIENT_ID, clientId)
+            .queryParam("state", state != null ? state : "")
+            .queryParam(UI_LOCAL, DEFAULT_UI_LOCAL)
+            .queryParam("response_type", responseType != null ? responseType : "code")
+            .build()
+            .toUriString();
+    }
+
+    private String buildAuthorizationCodeLocation(String redirectUri, String code, String state, String clientId) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(redirectUri)
+            .queryParam("code", code);
+        if (state != null && !state.isBlank()) {
+            builder.queryParam("state", state);
+        }
+        if (clientId != null && !clientId.isBlank()) {
+            builder.queryParam(CLIENT_ID, clientId);
+        }
+        builder.queryParam("iss", idamBaseUrl);
+        return builder.build().toUriString();
     }
 
 }
