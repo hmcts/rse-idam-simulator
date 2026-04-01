@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.servlet.http.Cookie;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
@@ -220,6 +222,29 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
+    void loginReturnsValidSetCookieHeadersForIncomingCookies() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Cookie", "Tester");
+
+        MvcResult loginResult = mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .cookie(new Cookie("original", "cookie-value"))
+                .param("username", email)
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("state", "browser-state")
+                .param("response_type", "code")
+                .param("ui_local", "en"))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        List<String> setCookieHeaders = loginResult.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("original=cookie-value")));
+        assertTrue(setCookieHeaders.stream().noneMatch(header -> header.contains("Cookie@")));
+    }
+
+    @Test
     void openIdTokenRejectsMalformedBasicAuthorizationHeader() throws Exception {
         mockMvc.perform(post("/o/token")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -271,7 +296,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
         return UriComponentsBuilder.fromUriString(redirectLocation).build().getQueryParams().getFirst("code");
     }
 
-    private org.springframework.test.web.servlet.ResultActions exchangeCode(String code) throws Exception {
+    private ResultActions exchangeCode(String code) throws Exception {
         return mockMvc.perform(post("/o/token")
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .header(

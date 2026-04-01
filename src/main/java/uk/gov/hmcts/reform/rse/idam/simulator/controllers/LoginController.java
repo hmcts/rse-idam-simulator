@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -80,8 +81,9 @@ public class LoginController {
         if (request.getCookies() != null) {
             List<Cookie> cookies = Arrays.asList(request.getCookies());
             cookies.forEach(c -> {
-                httpHeaders.add(HttpHeaders.SET_COOKIE, c.toString());
-                LOG.info("Reset cookie {}", c.toString());
+                String setCookieHeader = toSetCookieHeader(c);
+                httpHeaders.add(HttpHeaders.SET_COOKIE, setCookieHeader);
+                LOG.info("Reset cookie {}", setCookieHeader);
             });
         }
         String newIdamSession = simulatorService.getNewIdamSessionValue();
@@ -99,6 +101,26 @@ public class LoginController {
         httpHeaders.add("Location", locationValue);
         LOG.info("Location " + locationValue);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    private String toSetCookieHeader(Cookie cookie) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookie.getName(), cookie.getValue());
+        if (cookie.getPath() != null && !cookie.getPath().isBlank()) {
+            builder.path(cookie.getPath());
+        }
+        if (cookie.getDomain() != null && !cookie.getDomain().isBlank()) {
+            builder.domain(cookie.getDomain());
+        }
+        if (cookie.getMaxAge() >= 0) {
+            builder.maxAge(cookie.getMaxAge());
+        }
+        if (cookie.getSecure()) {
+            builder.secure(true);
+        }
+        if (cookie.isHttpOnly()) {
+            builder.httpOnly(true);
+        }
+        return builder.build().toString();
     }
 
     @DeleteMapping("/session/{access_token}")
