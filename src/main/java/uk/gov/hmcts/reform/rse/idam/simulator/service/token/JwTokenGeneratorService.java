@@ -29,6 +29,12 @@ public class JwTokenGeneratorService {
 
     public String generateToken(String issuer, long ttlMillis, String userName,
                                 String serviceId, String grantType) {
+        return generateToken(issuer, ttlMillis, userName, serviceId, grantType, "access_token", null);
+    }
+
+    public String generateToken(String issuer, long ttlMillis, String userName,
+                                String serviceId, String grantType,
+                                String tokenName, String nonce) {
 
         Date authTime = new Date();
 
@@ -43,13 +49,17 @@ public class JwTokenGeneratorService {
             .claim("sub", userName)
             .claim("grant_type", grantType)
             .claim("realm", "/hmcts")
-            .claim("tokenName", "access_token")
+            .claim("tokenName", tokenName)
             .claim("authGrantId", UUID.randomUUID().toString())
             .claim("auditTrackingId", UUID.randomUUID().toString())
             .claim("auth_level", 0)
             .claim("auth_time", authTime.getTime())
             .claim("scope", List.of("openid", "profile", "roles"))
             .claim("expires_in", ttlMillis / 1000);
+
+        if (nonce != null && !nonce.isBlank()) {
+            builder.claim("nonce", nonce);
+        }
 
         if (ttlMillis >= 0) {
             long expMillis = System.currentTimeMillis() + ttlMillis;

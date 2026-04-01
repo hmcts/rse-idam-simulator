@@ -41,12 +41,14 @@ public class LoginController {
                             @RequestParam("redirect_uri") String redirectUri,
                             @RequestParam("client_id") String clientId,
                             @RequestParam(value = "state", required = false) String state,
+                            @RequestParam(value = "nonce", required = false) String nonce,
                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
         String loginFormAction = "/login?"
             + "client_id=" + clientId
             + "&redirect_uri=" + redirectUri
             + "&ui_local=" + uiLocal
             + "&response_type=code"
+            + "&nonce=" + (nonce != null ? nonce : "")
             + "&state=" + (state != null ? state : "");
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
@@ -62,6 +64,7 @@ public class LoginController {
                                             @RequestParam("client_id") String clientId,
                                             @RequestParam("state") String state,
                                             @RequestParam("response_type") String responseType,
+                                            @RequestParam(value = "nonce", required = false) String nonce,
                                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal
     ) {
         LOG.info(
@@ -86,7 +89,7 @@ public class LoginController {
         httpHeaders.add(HttpHeaders.SET_COOKIE, "Idam.Session=" + newIdamSession);
         httpHeaders.add(HttpHeaders.SET_COOKIE, "idam_ui_locales=" + uiLocal);
 
-        String code = simulatorService.geAuthCodeFromUserName(username);
+        String code = simulatorService.geAuthCodeFromUserName(username, nonce);
         String locationValue = redirectUri
             + "?code=" + code
             + "&state=" + state

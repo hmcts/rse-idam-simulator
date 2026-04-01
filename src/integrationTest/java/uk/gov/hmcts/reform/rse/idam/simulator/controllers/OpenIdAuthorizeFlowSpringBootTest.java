@@ -116,6 +116,62 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
+    void browserAuthorizeFlowPreservesNonceInIdToken() throws Exception {
+        String email = uniqueEmail();
+        String nonce = "nonce-12345";
+        addUser(email, "Ada", "Lovelace");
+
+        MvcResult authorizeResult = mockMvc.perform(get("/o/authorize")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI)
+                .param("state", "browser-state")
+                .param("response_type", "code")
+                .param("nonce", nonce))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String loginLocation = authorizeResult.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertNotNull(loginLocation);
+        assertTrue(loginLocation.startsWith("/login"));
+        var loginQueryParams = UriComponentsBuilder.fromUriString(loginLocation).build().getQueryParams();
+        assertEquals(nonce, loginQueryParams.getFirst("nonce"));
+
+        MvcResult loginResult = mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", email)
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("state", "browser-state")
+                .param("response_type", "code")
+                .param("nonce", nonce)
+                .param("ui_local", "en"))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String redirectLocation = loginResult.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertNotNull(redirectLocation);
+        String code = UriComponentsBuilder.fromUriString(redirectLocation).build().getQueryParams().getFirst("code");
+        assertNotNull(code);
+
+        MvcResult tokenResult = mockMvc.perform(post("/o/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .header(
+                    HttpHeaders.AUTHORIZATION,
+                    "Basic " + HttpHeaders.encodeBasicAuth(CLIENT_ID, "a-secret", StandardCharsets.UTF_8)
+                )
+                .param("grant_type", "authorization_code")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("code", code))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        JsonNode tokenJson = objectMapper.readTree(tokenResult.getResponse().getContentAsString());
+        String idToken = tokenJson.path("id_token").asText();
+        assertEquals(nonce, SignedJWT.parse(idToken).getJWTClaimsSet().getStringClaim("nonce"));
+    }
+
+    @Test
     void authorizeWithoutLoginHintRedirectsToLogin() throws Exception {
         MvcResult authorizeResult = mockMvc.perform(get("/o/authorize")
                 .param("client_id", CLIENT_ID)

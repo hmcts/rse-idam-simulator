@@ -240,7 +240,7 @@ public class IdamSimulatorController {
             checkCode(code);
             token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
             refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
-            idToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+            idToken = simulatorService.generateIdTokenFromCode(code, clientId, grantType);
             simulatorService.updateTokenInUserFromCode(code, token);
         } else {
             if (username == null || username.isBlank()) {
@@ -299,7 +299,7 @@ public class IdamSimulatorController {
         @RequestParam(value = "acr_values", required = false) String acrValues,
         @RequestParam(value = "id_token_hint", required = false) String idTokenHint,
         @RequestParam(value = "login_hint", required = false) String loginHint) {
-        return authorize(clientId, redirectUri, state, responseType, loginHint);
+        return authorize(clientId, redirectUri, state, responseType, nonce, loginHint);
     }
 
     @GetMapping("/o/authorize")
@@ -308,8 +308,9 @@ public class IdamSimulatorController {
         @RequestParam(value = "redirect_uri", required = false) String redirectUri,
         @RequestParam(value = "state", required = false) String state,
         @RequestParam(value = "response_type", required = false) String responseType,
+        @RequestParam(value = "nonce", required = false) String nonce,
         @RequestParam(value = "login_hint", required = false) String loginHint) {
-        return authorize(clientId, redirectUri, state, responseType, loginHint);
+        return authorize(clientId, redirectUri, state, responseType, nonce, loginHint);
     }
 
     @GetMapping(value = "/health")
@@ -435,17 +436,18 @@ public class IdamSimulatorController {
                                              String redirectUri,
                                              String state,
                                              String responseType,
+                                             String nonce,
                                              String loginHint) {
         LOG.info("Request OpenId Connect Code for clientId {} loginHint {}", clientId, loginHint);
         checkAuthorizeRequiredParams(clientId, redirectUri);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         if (loginHint == null || loginHint.isBlank()) {
-            httpHeaders.add("Location", buildLoginLocation(clientId, redirectUri, state, responseType));
+            httpHeaders.add("Location", buildLoginLocation(clientId, redirectUri, state, responseType, nonce));
             return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
         }
 
-        String generatedCode = simulatorService.geAuthCodeFromUserName(loginHint);
+        String generatedCode = simulatorService.geAuthCodeFromUserName(loginHint, nonce);
         httpHeaders.add("Location", buildAuthorizationCodeLocation(redirectUri, generatedCode, state, clientId));
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
@@ -459,15 +461,17 @@ public class IdamSimulatorController {
         }
     }
 
-    private String buildLoginLocation(String clientId, String redirectUri, String state, String responseType) {
-        return UriComponentsBuilder.fromPath("/login")
+    private String buildLoginLocation(String clientId, String redirectUri, String state, String responseType, String nonce) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam(REDIRECT_URI, redirectUri)
             .queryParam(CLIENT_ID, clientId)
             .queryParam("state", state != null ? state : "")
             .queryParam(UI_LOCAL, DEFAULT_UI_LOCAL)
-            .queryParam("response_type", responseType != null ? responseType : "code")
-            .build()
-            .toUriString();
+            .queryParam("response_type", responseType != null ? responseType : "code");
+        if (nonce != null && !nonce.isBlank()) {
+            builder.queryParam("nonce", nonce);
+        }
+        return builder.build().toUriString();
     }
 
     private String buildAuthorizationCodeLocation(String redirectUri, String code, String state, String clientId) {

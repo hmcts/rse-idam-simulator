@@ -43,6 +43,21 @@ public class SimulatorService {
         return token;
     }
 
+    public String generateIdTokenFromCode(String code, String serviceId, String grantType) {
+        SimObject user = checkUserInMemoryNotEmptyByCode(code);
+        String token = jwTokenGenerator.generateToken(
+            issuer,
+            tokenExpirationMs,
+            user.getEmail(),
+            serviceId,
+            grantType,
+            "id_token",
+            user.getMostRecentNonce()
+        );
+        LOG.info("Oidc id_token generated {} for {}", token, user.getEmail());
+        return token;
+    }
+
     public String generateAToken(String userName, String clientID, String grantType) {
         return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
     }
@@ -121,8 +136,23 @@ public class SimulatorService {
 
     @Deprecated
     public String generateOauth2CodeFromUserName(String username) {
-        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
-        return generateNewCode(userInMemory);
+        return geAuthCodeFromUserName(username, null);
+    }
+
+    public String geAuthCodeFromUserName(String email) {
+        return geAuthCodeFromUserName(email, null);
+    }
+
+    public String geAuthCodeFromUserName(String email, String nonce) {
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
+        String mostRecentCode = userInMemory.get().getMostRecentCode();
+        if (mostRecentCode == null || mostRecentCode.isEmpty()) {
+            mostRecentCode = generateNewCode(userInMemory);
+        }
+        SimObject user = userInMemory.get();
+        user.setMostRecentNonce(nonce);
+        userService.putSimObject(user.getId(), user);
+        return mostRecentCode;
     }
 
     public String generateOauth2CodeFromPin(String pin) {
@@ -161,15 +191,6 @@ public class SimulatorService {
         user.setMostRecentCode(newCode);
         userService.putSimObject(user.getId(), user);
         return newCode;
-    }
-
-    public String geAuthCodeFromUserName(String email) {
-        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
-        String mostRecentCode = userInMemory.get().getMostRecentCode();
-        if (mostRecentCode == null || mostRecentCode.isEmpty()) {
-            mostRecentCode = generateNewCode(userInMemory);
-        }
-        return mostRecentCode;
     }
 
     public String getNewAuthCode() {
