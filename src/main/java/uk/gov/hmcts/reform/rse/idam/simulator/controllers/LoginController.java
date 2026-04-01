@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -41,12 +42,14 @@ public class LoginController {
                             @RequestParam("redirect_uri") String redirectUri,
                             @RequestParam("client_id") String clientId,
                             @RequestParam(value = "state", required = false) String state,
+                            @RequestParam(value = "nonce", required = false) String nonce,
                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
         String loginFormAction = "/login?"
             + "client_id=" + clientId
             + "&redirect_uri=" + redirectUri
             + "&ui_local=" + uiLocal
             + "&response_type=code"
+            + "&nonce=" + (nonce != null ? nonce : "")
             + "&state=" + (state != null ? state : "");
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
@@ -62,6 +65,7 @@ public class LoginController {
                                             @RequestParam("client_id") String clientId,
                                             @RequestParam("state") String state,
                                             @RequestParam("response_type") String responseType,
+                                            @RequestParam(value = "nonce", required = false) String nonce,
                                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal
     ) {
         LOG.info(
@@ -77,8 +81,9 @@ public class LoginController {
         if (request.getCookies() != null) {
             List<Cookie> cookies = Arrays.asList(request.getCookies());
             cookies.forEach(c -> {
-                httpHeaders.add(HttpHeaders.SET_COOKIE, c.toString());
-                LOG.info("Reset cookie {}", c.toString());
+                String setCookieHeader = toSetCookieHeader(c);
+                httpHeaders.add(HttpHeaders.SET_COOKIE, setCookieHeader);
+                LOG.info("Reset cookie {}", setCookieHeader);
             });
         }
         String newIdamSession = simulatorService.getNewIdamSessionValue();
@@ -86,7 +91,7 @@ public class LoginController {
         httpHeaders.add(HttpHeaders.SET_COOKIE, "Idam.Session=" + newIdamSession);
         httpHeaders.add(HttpHeaders.SET_COOKIE, "idam_ui_locales=" + uiLocal);
 
-        String code = simulatorService.geAuthCodeFromUserName(username);
+        String code = simulatorService.geAuthCodeFromUserName(username, nonce);
         String locationValue = redirectUri
             + "?code=" + code
             + "&state=" + state
@@ -96,6 +101,26 @@ public class LoginController {
         httpHeaders.add("Location", locationValue);
         LOG.info("Location " + locationValue);
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    private String toSetCookieHeader(Cookie cookie) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookie.getName(), cookie.getValue());
+        if (cookie.getPath() != null && !cookie.getPath().isBlank()) {
+            builder.path(cookie.getPath());
+        }
+        if (cookie.getDomain() != null && !cookie.getDomain().isBlank()) {
+            builder.domain(cookie.getDomain());
+        }
+        if (cookie.getMaxAge() >= 0) {
+            builder.maxAge(cookie.getMaxAge());
+        }
+        if (cookie.getSecure()) {
+            builder.secure(true);
+        }
+        if (cookie.isHttpOnly()) {
+            builder.httpOnly(true);
+        }
+        return builder.build().toString();
     }
 
     @DeleteMapping("/session/{access_token}")

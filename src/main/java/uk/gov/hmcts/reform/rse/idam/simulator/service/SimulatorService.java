@@ -37,13 +37,24 @@ public class SimulatorService {
     private long tokenExpirationMs;
 
     public String generateAuthTokenFromCode(String code, String serviceId, String grantType) {
-        Optional<SimObject> userInMemory = userService.getByCode(code);
-        String token = generateAToken(userInMemory.get().getEmail(), serviceId, grantType);
-        LOG.info("Oauth2 Token Generated {} for {}", token, userInMemory.get().getEmail());
-        if (userInMemory.isEmpty()) {
-            LOG.warn("No User for this code " + code);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Idam Simulator: No User for this code " + code);
-        }
+        SimObject user = checkUserInMemoryNotEmptyByCode(code);
+        String token = generateAToken(user.getEmail(), serviceId, grantType);
+        LOG.info("Oauth2 Token Generated {} for {}", token, user.getEmail());
+        return token;
+    }
+
+    public String generateIdTokenFromCode(String code, String serviceId, String grantType) {
+        SimObject user = checkUserInMemoryNotEmptyByCode(code);
+        String token = jwTokenGenerator.generateToken(
+            issuer,
+            tokenExpirationMs,
+            user.getEmail(),
+            serviceId,
+            grantType,
+            "id_token",
+            user.getMostRecentNonce()
+        );
+        LOG.info("Oidc id_token generated {} for {}", token, user.getEmail());
         return token;
     }
 
@@ -82,9 +93,15 @@ public class SimulatorService {
     }
 
     public void updateTokenInUserFromCode(String code, String token) {
-        Optional<SimObject> userInMemory = userService.getByCode(code);
-        SimObject user = userInMemory.get();
+        SimObject user = checkUserInMemoryNotEmptyByCode(code);
         user.setMostRecentJwToken(token);
+        userService.putSimObject(user.getId(), user);
+    }
+
+    public void invalidateAuthCode(String code) {
+        SimObject user = checkUserInMemoryNotEmptyByCode(code);
+        user.setMostRecentCode(null);
+        user.setMostRecentNonce(null);
         userService.putSimObject(user.getId(), user);
     }
 
@@ -112,10 +129,30 @@ public class SimulatorService {
         return userInMemory;
     }
 
+    public SimObject checkUserInMemoryNotEmptyByCode(String code) {
+        Optional<SimObject> userInMemory = userService.getByCode(code);
+        if (userInMemory.isEmpty()) {
+            LOG.warn("No User for this code {}", code);
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Idam Simulator: No User for this code " + code
+            );
+        }
+        return userInMemory.get();
+    }
+
     @Deprecated
     public String generateOauth2CodeFromUserName(String username) {
-        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
-        return generateNewCode(userInMemory);
+        return geAuthCodeFromUserName(username, null);
+    }
+
+    public String geAuthCodeFromUserName(String email, String nonce) {
+        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
+        String mostRecentCode = generateNewCode(userInMemory);
+        SimObject user = userInMemory.get();
+        user.setMostRecentNonce(nonce);
+        userService.putSimObject(user.getId(), user);
+        return mostRecentCode;
     }
 
     public String generateOauth2CodeFromPin(String pin) {
@@ -154,15 +191,6 @@ public class SimulatorService {
         user.setMostRecentCode(newCode);
         userService.putSimObject(user.getId(), user);
         return newCode;
-    }
-
-    public String geAuthCodeFromUserName(String email) {
-        Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
-        String mostRecentCode = userInMemory.get().getMostRecentCode();
-        if (mostRecentCode == null || mostRecentCode.isEmpty()) {
-            mostRecentCode = generateNewCode(userInMemory);
-        }
-        return mostRecentCode;
     }
 
     public String getNewAuthCode() {

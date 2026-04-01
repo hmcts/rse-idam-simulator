@@ -33,6 +33,7 @@ public class SimObject implements Serializable {
     private String mostRecentJwToken;
     private long mostRecentJwTokenUnixTime;
     private String mostRecentCode;
+    private String mostRecentNonce;
     private String lastGeneratedPin;
 
     public void setMostRecentJwToken(String mostRecentJwToken) {
@@ -42,6 +43,10 @@ public class SimObject implements Serializable {
 
     public void setMostRecentCode(String mostRecentCode) {
         this.mostRecentCode = mostRecentCode;
+    }
+
+    public void setMostRecentNonce(String mostRecentNonce) {
+        this.mostRecentNonce = mostRecentNonce;
     }
 
     public void setLastGeneratedPin(String lastGeneratedPin) {
