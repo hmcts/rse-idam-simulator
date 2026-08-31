@@ -14,6 +14,9 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.OpenIdConfigService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,6 +75,18 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
         postOauthToken("authorization_code", "", status().isBadRequest());
         postOauthToken("client_credentials", "", status().isBadRequest());
         postOauthToken("authorization_code", VALIDE_CODE, status().isOk());
+    }
+
+    @DisplayName("An unknown user id should be Not Found rather than a server error")
+    @Test
+    public void unknownUserIdIsNotFound() throws Exception {
+        // getByUserId returns null for an id that was never added; letting that null flow on
+        // produced a 500, which looks like the simulator is broken rather than the user missing.
+        when(userService.getByUserId(anyString())).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/users/noSuchUserId").header(AUTHORIZATION, "Bearer aToken"))
+            .andExpect(status().isNotFound())
+            .andReturn();
     }
 
     private void postOauthToken(String grantType, String code, ResultMatcher expectedStatus) throws Exception {

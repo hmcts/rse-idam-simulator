@@ -65,6 +65,19 @@ password: somePassword
 scope: openid profile roles
 ```
 
+### Looking a user up
+
+There are three ways to read a user back, all needing the bearer token from the call above:
+
+```http request
+GET http://localhost:5556/api/v1/users/self          # the caller, resolved from the token
+GET http://localhost:5556/api/v1/users/{userId}      # a specific user, 404 if unknown
+GET http://localhost:5556/o/userinfo                 # the caller, in OpenID claim form
+```
+
+`/api/v1/users/self` is what XUI uses to resolve the signed-in user, so it is needed for a
+browser login to complete. `/details` still works but is deprecated in favour of `/o/userinfo`.
+
 ## How to log in and have a session cookie like Expert UI does?
 
 - Start the application and add a user like in **How to use the simulator with Postman** above section

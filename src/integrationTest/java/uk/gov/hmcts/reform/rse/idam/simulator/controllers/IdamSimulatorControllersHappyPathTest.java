@@ -229,6 +229,37 @@ public class IdamSimulatorControllersHappyPathTest {
             .andReturn();
     }
 
+    @DisplayName("Should return the caller's own user details")
+    @Test
+    public void returnOwnUserDetails() throws Exception {
+        when(userService.getByJwToken(anyString()))
+            .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+
+        mockMvc.perform(get("/api/v1/users/self").header(AUTHORIZATION, BEARER_TOKEN))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(ONE_USER_ID))
+            .andExpect(jsonPath("$.email").value(TEST_EMAIL_HMCTS_NET))
+            .andExpect(jsonPath("$.forename").value(JOHN))
+            .andExpect(jsonPath("$.surname").value(SMITH))
+            .andExpect(jsonPath("$.roles[0]").value(ROLE_1))
+            .andExpect(jsonPath("$.roles[1]").value(ROLE_2))
+            .andReturn();
+    }
+
+    @DisplayName("Should resolve self from the token and never treat it as a user id")
+    @Test
+    public void returnOwnUserDetailsWithoutLookingUpAUserCalledSelf() throws Exception {
+        when(userService.getByJwToken(anyString()))
+            .thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
+
+        mockMvc.perform(get("/api/v1/users/self").header(AUTHORIZATION, BEARER_TOKEN))
+            .andExpect(status().isOk());
+
+        // The reason this endpoint exists: "self" reaching the {userId} handler finds no user,
+        // and the caller sees a failure where it asked a valid question.
+        verify(userService, Mockito.never()).getByUserId(anyString());
+    }
+
     @DisplayName("Should return expected user details using a query")
     @Test
     public void searchUserDetails() throws Exception {
