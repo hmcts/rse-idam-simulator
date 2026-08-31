@@ -191,6 +191,21 @@ public class IdamSimulatorController {
         return toUserDetails(simObject);
     }
 
+    /**
+     * The caller's own details, resolved from the bearer token.
+     *
+     * <p>Idam serves this alongside {@code /api/v1/users/{userId}}, and it is what XUI uses to
+     * resolve the signed-in user. It has to be mapped explicitly and ahead of the {userId}
+     * variant, otherwise "self" is taken as a user id and no such user exists.
+     */
+    @GetMapping("/api/v1/users/self")
+    public IdamUserDetails getOwnUserDetails(@RequestHeader(AUTHORIZATION) String authorization) {
+        LOG.info("Request own User Details");
+        simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
+        SimObject simObject = userService.getByJwToken(authorization).get();
+        return toUserDetails(simObject);
+    }
+
     @GetMapping("/api/v1/users/{userId}")
     public IdamUserDetails getUserDetails(
         @RequestHeader(AUTHORIZATION) String authorization,
@@ -198,6 +213,12 @@ public class IdamSimulatorController {
         LOG.info("Request User Details {}", userId);
         simulatorService.checkUserHasBeenAuthenticateByBearerToken(authorization);
         SimObject simObject = userService.getByUserId(userId);
+        if (simObject == null) {
+            // Without this the null reaches toUserDetails and surfaces as a 500, which reads as a
+            // broken simulator rather than an unknown user. Idam answers 404 here.
+            LOG.warn("No user in simulator memory for userId {}", userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Idam Simulator: User not found");
+        }
         return toUserDetails(simObject);
     }
 
