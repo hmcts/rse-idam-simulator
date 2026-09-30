@@ -75,24 +75,50 @@
       font-size: 1.25rem;
       margin: 0 0 4px;
     }
-    .accounts table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      font-size: 0.9rem;
-    }
-    .accounts th, .accounts td {
-      text-align: left;
-      padding: 8px;
-      border-bottom: 1px solid #b1b4b6;
-      vertical-align: top;
-    }
-    .accounts a {
-      color: #1d70b8;
-      word-break: break-all;
-    }
-    .roles {
+    .accounts h3 {
+      font-size: 1rem;
       color: #505a5f;
+      margin: 20px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .accounts ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+    }
+    a.account {
+      display: block;
+      background: #fff;
+      border: 1px solid #b1b4b6;
+      border-left: 5px solid #1d70b8;
+      padding: 12px 14px;
+      color: #0b0c0c;
+      text-decoration: none;
+    }
+    a.account:hover {
+      border-left-color: #00703c;
+      background: #f8f8f8;
+    }
+    a.account:focus {
+      outline: 3px solid #ffdd00;
+      outline-offset: 0;
+    }
+    .account-name {
+      display: block;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1d70b8;
+    }
+    .account-email {
+      display: block;
+      color: #505a5f;
+      font-size: 0.85rem;
+      margin-top: 4px;
+      word-break: break-all;
     }
   </style>
 </head>
@@ -110,17 +136,20 @@
     <button type="submit" name="save">Sign in</button>
   </div>
 </form>
-<section class="accounts" th:if="${accounts != null and !accounts.isEmpty()}">
+<section class="accounts" th:if="${accountGroups != null and !accountGroups.isEmpty()}">
   <h2>Quick login</h2>
-  <p class="hint">Select an account to sign in as that user.</p>
-  <table>
-    <tr><th>Email</th><th>Name</th><th>Roles</th></tr>
-    <tr th:each="account : ${accounts}">
-      <td><a href="#" class="account" th:attr="data-email=${account.email}" th:text="${account.email}">email</a></td>
-      <td th:text="${account.forename + ' ' + account.surname}">name</td>
-      <td class="roles" th:text="${account.roles == null ? '' : #strings.listJoin(account.roles, ', ')}">roles</td>
-    </tr>
-  </table>
+  <p class="hint">Choose who to sign in as.</p>
+  <th:block th:each="group : ${accountGroups}">
+    <h3 th:text="${group.key}">Label</h3>
+    <ul>
+      <li th:each="account : ${group.value}">
+        <a href="#" class="account" th:attr="data-email=${account.email}">
+          <span class="account-name" th:text="${account.forename + ' ' + account.surname}">Name</span>
+          <span class="account-email" th:text="${account.email}">email</span>
+        </a>
+      </li>
+    </ul>
+  </th:block>
 </section>
 <script>
   document.querySelectorAll('a.account').forEach(function (link) {

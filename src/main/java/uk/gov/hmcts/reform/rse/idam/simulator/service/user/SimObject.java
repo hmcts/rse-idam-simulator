@@ -35,6 +35,8 @@ public class SimObject implements Serializable {
     private String mostRecentCode;
     private String mostRecentNonce;
     private String lastGeneratedPin;
+    private boolean quickLogin;
+    private String quickLoginLabel;
 
     public void setMostRecentJwToken(String mostRecentJwToken) {
         this.mostRecentJwToken = mostRecentJwToken.replace(BEARER_, "");

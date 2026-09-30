@@ -25,8 +25,10 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.DataflowAnomalyAnalysis"})
 @Controller
@@ -76,11 +78,18 @@ public class LoginController {
         String loginFormAction = builder.build().toUriString();
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
-        // Listing the accounts saves looking up test users' emails; the simulator doesn't check passwords anyway.
-        model.addAttribute("accounts", userService.getAll().stream()
-            .filter(user -> user.getEmail() != null)
-            .sorted(Comparator.comparing(SimObject::getEmail))
-            .toList());
+        // Offer the accounts created for quick login, saving people looking up test users' emails. The simulator
+        // doesn't check passwords anyway.
+        model.addAttribute("accountGroups", userService.getAll().stream()
+            .filter(user -> user.isQuickLogin() && user.getEmail() != null)
+            .sorted(Comparator.comparing((SimObject user) -> nullToEmpty(user.getQuickLoginLabel()))
+                        .thenComparing(user -> nullToEmpty(user.getSurname()))
+                        .thenComparing(user -> nullToEmpty(user.getForename()))
+                        .thenComparing(SimObject::getEmail))
+            .collect(Collectors.groupingBy(
+                user -> user.getQuickLoginLabel() == null ? "Other accounts" : user.getQuickLoginLabel(),
+                LinkedHashMap::new,
+                Collectors.toList())));
         return "login";
     }
 
@@ -153,6 +162,10 @@ public class LoginController {
             builder.queryParam("state", state);
         }
         return builder.build().toUriString();
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private String toSetCookieHeader(Cookie cookie) {

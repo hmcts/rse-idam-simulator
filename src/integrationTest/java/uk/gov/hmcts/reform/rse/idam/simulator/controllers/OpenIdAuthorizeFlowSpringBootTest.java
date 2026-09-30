@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -325,15 +326,28 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
-    void loginPageListsAvailableAccounts() throws Exception {
+    void loginPageOffersQuickLoginAccountsUnderTheirLabel() throws Exception {
         String email = uniqueEmail();
-        addUser(email, "Listed", "Account");
+        addUser(email, "Listed", "Judge", true, "District Judge");
         mockMvc.perform(get("/login")
                 .param("client_id", CLIENT_ID)
                 .param("redirect_uri", REDIRECT_URI))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("data-email=\"" + email + "\"")))
+            .andExpect(content().string(containsString("Listed Judge")))
+            .andExpect(content().string(containsString("District Judge")))
             .andExpect(content().string(containsString("name=\"username\"")));
+    }
+
+    @Test
+    void loginPageHidesAccountsNotCreatedForQuickLogin() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "System", "User");
+        mockMvc.perform(get("/login")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk())
+            .andExpect(content().string(not(containsString(email))));
     }
 
     @Test
@@ -378,12 +392,19 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     private void addUser(String email, String forename, String surname) throws Exception {
+        addUser(email, forename, surname, false, null);
+    }
+
+    private void addUser(String email, String forename, String surname, boolean quickLogin, String quickLoginLabel)
+        throws Exception {
         IdamTestingUser idamTestingUser = new IdamTestingUser();
         idamTestingUser.setEmail(email);
         idamTestingUser.setForename(forename);
         idamTestingUser.setSurname(surname);
         idamTestingUser.setPassword("OnePassword");
         idamTestingUser.setRoles(List.of(RoleDetails.build("role1"), RoleDetails.build("role2")));
+        idamTestingUser.setQuickLogin(quickLogin);
+        idamTestingUser.setQuickLoginLabel(quickLoginLabel);
 
         mockMvc.perform(post("/testing-support/accounts")
                 .contentType(MediaType.APPLICATION_JSON)

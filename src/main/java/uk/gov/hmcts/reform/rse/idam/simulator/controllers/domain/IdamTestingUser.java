@@ -10,6 +10,30 @@ public class IdamTestingUser {
     private String forename;
     private String surname;
     private List<RoleDetails> roles = Collections.emptyList();
+    /**
+     * Whether the login page offers this account for quick login. Off by default, so system accounts stay hidden.
+     */
+    private boolean quickLogin;
+    /**
+     * How the login page describes the account, e.g. "District Judge".
+     */
+    private String quickLoginLabel;
+
+    public boolean isQuickLogin() {
+        return quickLogin;
+    }
+
+    public void setQuickLogin(boolean quickLogin) {
+        this.quickLogin = quickLogin;
+    }
+
+    public String getQuickLoginLabel() {
+        return quickLoginLabel;
+    }
+
+    public void setQuickLoginLabel(String quickLoginLabel) {
+        this.quickLoginLabel = quickLoginLabel;
+    }
 
     public String getPassword() {
         return password;

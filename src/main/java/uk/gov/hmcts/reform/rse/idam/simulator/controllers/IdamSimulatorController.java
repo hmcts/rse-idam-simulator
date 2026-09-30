@@ -403,6 +403,8 @@ public class IdamSimulatorController {
             .forename(request.getForename())
             .id(userId)
             .roles(request.getRoles().stream().map(RoleDetails::getCode).collect(Collectors.toList()))
+            .quickLogin(request.isQuickLogin())
+            .quickLoginLabel(request.getQuickLoginLabel())
             .build());
         return new IdamUserAddReponse(userId);
     }
