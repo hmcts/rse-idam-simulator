@@ -1,5 +1,6 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.user;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserService {
@@ -17,4 +18,6 @@ public interface UserService {
     SimObject getByUserId(String userId);
 
     void putSimObject(String userId, SimObject simObject);
+
+    List<SimObject> getAll();
 }

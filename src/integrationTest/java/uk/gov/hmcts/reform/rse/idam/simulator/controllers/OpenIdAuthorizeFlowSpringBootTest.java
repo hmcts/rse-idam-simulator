@@ -29,12 +29,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -320,6 +322,18 @@ class OpenIdAuthorizeFlowSpringBootTest {
                 .param("client_id", CLIENT_ID)
                 .param("redirect_uri", REDIRECT_URI))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void loginPageListsAvailableAccounts() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Listed", "Account");
+        mockMvc.perform(get("/login")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("data-email=\"" + email + "\"")))
+            .andExpect(content().string(containsString("name=\"username\"")));
     }
 
     @Test

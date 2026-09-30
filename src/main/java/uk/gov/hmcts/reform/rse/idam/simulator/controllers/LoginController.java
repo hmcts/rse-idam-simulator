@@ -20,8 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +38,9 @@ public class LoginController {
 
     @Autowired
     private SimulatorService simulatorService;
+
+    @Autowired
+    private UserService userService;
 
     @Value("${simulator.jwt.issuer}")
     private String jwtIssuer;
@@ -70,6 +76,11 @@ public class LoginController {
         String loginFormAction = builder.build().toUriString();
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
+        // Listing the accounts saves looking up test users' emails; the simulator doesn't check passwords anyway.
+        model.addAttribute("accounts", userService.getAll().stream()
+            .filter(user -> user.getEmail() != null)
+            .sorted(Comparator.comparing(SimObject::getEmail))
+            .toList());
         return "login";
     }
 

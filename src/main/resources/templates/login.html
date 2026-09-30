@@ -21,7 +21,7 @@
       border-bottom: 8px solid #1d70b8;
     }
     main {
-      max-width: 420px;
+      max-width: 720px;
       margin: 48px auto;
       padding: 0 16px;
     }
@@ -68,6 +68,32 @@
     button:hover {
       background: #005a30;
     }
+    .accounts {
+      margin-top: 32px;
+    }
+    .accounts h2 {
+      font-size: 1.25rem;
+      margin: 0 0 4px;
+    }
+    .accounts table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 0.9rem;
+    }
+    .accounts th, .accounts td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #b1b4b6;
+      vertical-align: top;
+    }
+    .accounts a {
+      color: #1d70b8;
+      word-break: break-all;
+    }
+    .roles {
+      color: #505a5f;
+    }
   </style>
 </head>
 <body>
@@ -84,6 +110,28 @@
     <button type="submit" name="save">Sign in</button>
   </div>
 </form>
+<section class="accounts" th:if="${accounts != null and !accounts.isEmpty()}">
+  <h2>Quick login</h2>
+  <p class="hint">Select an account to sign in as that user.</p>
+  <table>
+    <tr><th>Email</th><th>Name</th><th>Roles</th></tr>
+    <tr th:each="account : ${accounts}">
+      <td><a href="#" class="account" th:attr="data-email=${account.email}" th:text="${account.email}">email</a></td>
+      <td th:text="${account.forename + ' ' + account.surname}">name</td>
+      <td class="roles" th:text="${account.roles == null ? '' : #strings.listJoin(account.roles, ', ')}">roles</td>
+    </tr>
+  </table>
+</section>
+<script>
+  document.querySelectorAll('a.account').forEach(function (link) {
+    link.addEventListener('click', function (event) {
+      event.preventDefault();
+      // The simulator only checks that the account exists, so the username alone signs in.
+      document.getElementById('username').value = link.dataset.email;
+      document.forms.loginForm.submit();
+    });
+  });
+</script>
 </main>
 </body>
 </html>
