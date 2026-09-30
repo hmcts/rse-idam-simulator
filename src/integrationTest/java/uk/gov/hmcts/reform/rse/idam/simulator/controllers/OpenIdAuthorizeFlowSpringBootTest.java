@@ -291,6 +291,78 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void loggedInBrowserIsSignedStraightInUntilItsSessionEnds() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Sam", "Session");
+        Cookie session = loginSession(email);
+
+        MvcResult signedIn = mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", "another-service")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("state", "second-service"))
+            .andExpect(status().isFound())
+            .andReturn();
+        var params = UriComponentsBuilder.fromUriString(signedIn.getResponse().getRedirectedUrl()).build()
+            .getQueryParams();
+        assertEquals("second-service", params.getFirst("state"));
+        exchangeCode(params.getFirst("code")).andExpect(status().isOk());
+
+        mockMvc.perform(get("/o/endSession")
+                .cookie(session)
+                .param("post_logout_redirect_uri", REDIRECT_URI))
+            .andExpect(status().isFound())
+            .andExpect(result -> assertEquals(REDIRECT_URI, result.getResponse().getRedirectedUrl()));
+
+        mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void unknownBrowserSessionShowsTheLoginForm() throws Exception {
+        mockMvc.perform(get("/login")
+                .cookie(new Cookie("Idam.Session", "not-a-session"))
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loginIgnoresSurroundingWhitespaceInTheUsername() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Tab", "Complete");
+        mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", email + " ")
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("response_type", "code"))
+            .andExpect(status().isFound());
+    }
+
+    private Cookie loginSession(String email) throws Exception {
+        MvcResult login = mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", email)
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("response_type", "code"))
+            .andExpect(status().isFound())
+            .andReturn();
+        String value = login.getResponse().getHeaders(HttpHeaders.SET_COOKIE).stream()
+            .filter(header -> header.startsWith("Idam.Session="))
+            .reduce((first, second) -> second)
+            .map(header -> header.substring("Idam.Session=".length()).split(";")[0])
+            .orElseThrow();
+        return new Cookie("Idam.Session", value);
+    }
+
     private void addUser(String email, String forename, String surname) throws Exception {
         IdamTestingUser idamTestingUser = new IdamTestingUser();
         idamTestingUser.setEmail(email);

@@ -12,6 +12,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +23,15 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.DataflowAnomalyAnalysis"})
 @Controller
 public class LoginController {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
+
+    private static final String IDAM_SESSION_COOKIE = "Idam.Session";
 
     @Autowired
     private SimulatorService simulatorService;
@@ -44,7 +48,14 @@ public class LoginController {
                             @RequestParam("client_id") String clientId,
                             @RequestParam(value = "state", required = false) String state,
                             @RequestParam(value = "nonce", required = false) String nonce,
-                            @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
+                            @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal,
+                            @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
+        // Like IDAM, a browser that has already logged in is signed straight in to the next service that asks.
+        Optional<String> sessionUser = simulatorService.getIdamSessionUser(idamSession);
+        if (sessionUser.isPresent()) {
+            LOG.info("Signing in {} from their existing session", sessionUser.get());
+            return "redirect:" + callbackLocation(sessionUser.get(), redirectUri, clientId, state, nonce);
+        }
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam("client_id", clientId)
             .queryParam("redirect_uri", redirectUri)
@@ -92,12 +103,37 @@ public class LoginController {
                 LOG.info("Reset cookie {}", setCookieHeader);
             });
         }
-        String newIdamSession = simulatorService.getNewIdamSessionValue();
+        String email = username.trim();
+        String locationValue = callbackLocation(email, redirectUri, clientId, state, nonce);
+        String newIdamSession = simulatorService.createIdamSession(email);
 
-        httpHeaders.add(HttpHeaders.SET_COOKIE, "Idam.Session=" + newIdamSession);
+        httpHeaders.add(HttpHeaders.SET_COOKIE, IDAM_SESSION_COOKIE + "=" + newIdamSession + "; Path=/; HttpOnly");
         httpHeaders.add(HttpHeaders.SET_COOKIE, "idam_ui_locales=" + uiLocal);
 
-        String code = simulatorService.geAuthCodeFromUserName(username, nonce);
+        httpHeaders.add("Location", locationValue);
+        LOG.info("Location " + locationValue);
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    /**
+     * Ends the browser session started at login, then returns to the service if it says where.
+     */
+    @GetMapping("/o/endSession")
+    public ResponseEntity<Object> endSession(
+        @RequestParam(value = "post_logout_redirect_uri", required = false) String postLogoutRedirectUri,
+        @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
+        simulatorService.endIdamSession(idamSession);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(HttpHeaders.SET_COOKIE, IDAM_SESSION_COOKIE + "=; Path=/; Max-Age=0; HttpOnly");
+        if (postLogoutRedirectUri == null || postLogoutRedirectUri.isBlank()) {
+            return new ResponseEntity<>(httpHeaders, HttpStatus.NO_CONTENT);
+        }
+        httpHeaders.add(HttpHeaders.LOCATION, postLogoutRedirectUri);
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    private String callbackLocation(String email, String redirectUri, String clientId, String state, String nonce) {
+        String code = simulatorService.geAuthCodeFromUserName(email, nonce);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(redirectUri)
             .queryParam("code", code)
             .queryParam("client_id", clientId)
@@ -105,11 +141,7 @@ public class LoginController {
         if (state != null && !state.isBlank()) {
             builder.queryParam("state", state);
         }
-        String locationValue = builder.build().toUriString();
-
-        httpHeaders.add("Location", locationValue);
-        LOG.info("Location " + locationValue);
-        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+        return builder.build().toUriString();
     }
 
     private String toSetCookieHeader(Cookie cookie) {

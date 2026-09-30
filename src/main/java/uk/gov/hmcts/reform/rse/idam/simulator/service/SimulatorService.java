@@ -13,8 +13,10 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.LawOfDemeter"})
 @Component
@@ -29,6 +31,8 @@ public class SimulatorService {
 
     @Autowired
     private UserService userService;
+
+    private final Map<String, String> idamSessions = new ConcurrentHashMap<>();
 
     @Value("${simulator.jwt.issuer}")
     private String issuer;
@@ -225,5 +229,31 @@ public class SimulatorService {
         String newIdamSession = generateRandomAlphanumeric(64);
         LOG.info("New Idam Session Value generated {}", newIdamSession);
         return newIdamSession;
+    }
+
+    /**
+     * Starts a browser session for a user who has logged in, so later logins in the same browser can skip the form.
+     */
+    public String createIdamSession(String username) {
+        String session = getNewIdamSessionValue();
+        idamSessions.put(session, username);
+        return session;
+    }
+
+    /**
+     * The user a browser session belongs to, if the session is known and the user still exists.
+     */
+    public Optional<String> getIdamSessionUser(String session) {
+        if (session == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(idamSessions.get(session))
+            .filter(username -> userService.getByEmail(username).isPresent());
+    }
+
+    public void endIdamSession(String session) {
+        if (session != null) {
+            idamSessions.remove(session);
+        }
     }
 }
