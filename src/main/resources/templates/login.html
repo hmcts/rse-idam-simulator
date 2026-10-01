@@ -1,20 +1,169 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>  RSE Idam Simulator Login Form </title>
+  <style>
+    [hidden] {
+      display: none !important;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f3f2f1;
+      color: #0b0c0c;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .header {
+      background: #0b0c0c;
+      color: #fff;
+      padding: 14px 24px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-bottom: 8px solid #1d70b8;
+    }
+    main {
+      max-width: 720px;
+      margin: 48px auto;
+      padding: 0 16px;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin: 0 0 8px;
+    }
+    .hint {
+      color: #505a5f;
+      margin: 0 0 24px;
+    }
+    .container {
+      background: #fff;
+      padding: 24px;
+      border-top: 4px solid #1d70b8;
+    }
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      border: 2px solid #0b0c0c;
+    }
+    input:focus {
+      outline: 3px solid #ffdd00;
+      outline-offset: 0;
+    }
+    button {
+      background: #00703c;
+      color: #fff;
+      border: 0;
+      box-shadow: 0 2px 0 #002d18;
+      padding: 10px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005a30;
+    }
+    .accounts {
+      margin-top: 32px;
+    }
+    .accounts h2 {
+      font-size: 1.25rem;
+      margin: 0 0 4px;
+    }
+    .accounts h3 {
+      font-size: 1rem;
+      color: #505a5f;
+      margin: 20px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .accounts ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+    }
+    a.account {
+      display: block;
+      background: #fff;
+      border: 1px solid #b1b4b6;
+      border-left: 5px solid #1d70b8;
+      padding: 12px 14px;
+      color: #0b0c0c;
+      text-decoration: none;
+    }
+    a.account:hover {
+      border-left-color: #00703c;
+      background: #f8f8f8;
+    }
+    a.account:focus {
+      outline: 3px solid #ffdd00;
+      outline-offset: 0;
+    }
+    .account-name {
+      display: block;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1d70b8;
+    }
+    .account-email {
+      display: block;
+      color: #505a5f;
+      font-size: 0.85rem;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+  </style>
 </head>
 <body>
-<center> <h1> RSE Idam Simulator Login Form </h1> </center>
+<div class="header">HMCTS IDAM Simulator</div>
+<main>
+<center th:hidden="${pickerOnly}"> <h1> RSE Idam Simulator Login Form </h1> </center>
+<p class="hint" th:hidden="${pickerOnly}">Sign in with a test account. This is a simulator: it only checks that the account exists.</p>
 <form  action="#" th:action="${loginFormAction}" name="loginForm" method="post">
-  <div class="container">
-    <label>Username : </label>
-    <input type="text" placeholder="Enter Username" name="username" id="username">
-    <label>Password : </label>
-    <input type="password" placeholder="Enter Password" name="password" id="password">
+  <div class="container" th:hidden="${pickerOnly}">
+    <label for="username">Username : </label>
+    <input type="text" placeholder="Enter Username" name="username" id="username" autocomplete="username">
+    <label for="password">Password : </label>
+    <input type="password" placeholder="Enter Password" name="password" id="password" autocomplete="current-password">
     <button type="submit" name="save">Sign in</button>
   </div>
 </form>
+<section class="accounts" th:if="${accountGroups != null and !accountGroups.isEmpty()}">
+  <h2 th:text="${pickerOnly} ? 'Choose who to sign in as' : 'Quick login'">Quick login</h2>
+  <p class="hint" th:text="${pickerOnly} ? 'Select your name to sign in.' : 'Choose who to sign in as.'">Choose who to sign in as.</p>
+  <th:block th:each="group : ${accountGroups}">
+    <h3 th:text="${group.key}">Label</h3>
+    <ul>
+      <li th:each="account : ${group.value}">
+        <a href="#" class="account" th:attr="data-email=${account.email}">
+          <span class="account-name" th:text="${#strings.trim((account.forename ?: '') + ' ' + (account.surname ?: ''))}">Name</span>
+          <span class="account-email" th:text="${account.email}">email</span>
+        </a>
+      </li>
+    </ul>
+  </th:block>
+</section>
+<script>
+  document.querySelectorAll('a.account').forEach(function (link) {
+    link.addEventListener('click', function (event) {
+      event.preventDefault();
+      // The simulator only checks that the account exists, so the username alone signs in.
+      document.getElementById('username').value = link.dataset.email;
+      document.forms.loginForm.submit();
+    });
+  });
+</script>
+</main>
 </body>
 </html>
-

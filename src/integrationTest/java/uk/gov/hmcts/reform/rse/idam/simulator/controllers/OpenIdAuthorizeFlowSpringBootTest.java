@@ -29,12 +29,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -291,13 +295,226 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void loggedInBrowserIsSignedStraightInUntilItsSessionEnds() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Sam", "Session");
+        Cookie session = loginSession(email);
+
+        MvcResult signedIn = mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", "another-service")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("state", "second-service"))
+            .andExpect(status().isFound())
+            .andReturn();
+        var params = UriComponentsBuilder.fromUriString(signedIn.getResponse().getRedirectedUrl()).build()
+            .getQueryParams();
+        assertEquals("second-service", params.getFirst("state"));
+        exchangeCode(params.getFirst("code")).andExpect(status().isOk());
+
+        mockMvc.perform(get("/o/endSession")
+                .cookie(session)
+                .param("post_logout_redirect_uri", REDIRECT_URI))
+            .andExpect(status().isFound())
+            .andExpect(result -> assertEquals(REDIRECT_URI, result.getResponse().getRedirectedUrl()));
+
+        mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loginPageOffersQuickLoginAccountsUnderTheirLabel() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Listed", "Judge", true, "District Judge");
+        mockMvc.perform(get("/login")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("data-email=\"" + email + "\"")))
+            .andExpect(content().string(containsString("Listed Judge")))
+            .andExpect(content().string(containsString("District Judge")))
+            .andExpect(content().string(containsString("name=\"username\"")));
+    }
+
+    @Test
+    void loginFormIsShownByDefaultAlongsideQuickLogin() throws Exception {
+        addUser(uniqueEmail(), "Visible", "Form", true, "District Judge");
+        mockMvc.perform(get("/login")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("<div class=\"container\">")))
+            .andExpect(content().string(containsString("Quick login")));
+    }
+
+    @Test
+    void loginPageHidesAccountsNotCreatedForQuickLogin() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "System", "User");
+        mockMvc.perform(get("/login")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk())
+            .andExpect(content().string(not(containsString(email))));
+    }
+
+    @Test
+    void tamperedBrowserSessionShowsTheLoginForm() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Tam", "Pered");
+        String victim = uniqueEmail();
+        addUser(victim, "Vic", "Tim");
+        String[] parts = loginSession(email).getValue().split("\\.");
+        // A well formed session for someone else, carrying the first user's signature.
+        String forged = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString((System.currentTimeMillis() + "|abc|" + victim).getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(get("/login")
+                .cookie(new Cookie("Idam.Session", forged + "." + parts[1]))
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loggingOutAnUnknownTokenStillSucceeds() throws Exception {
+        mockMvc.perform(delete("/session/not-a-jwt")).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void singleSignOnKeepsStateAndRedirectUriWithBraces() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Cur", "Ly");
+        Cookie session = loginSession(email);
+
+        MvcResult result = mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", "https://localhost/{tenant}/cb")
+                .param("state", "a{b}c"))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String location = result.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertTrue(location.startsWith("https://localhost/{tenant}/cb"), location);
+        assertTrue(location.contains("state=a{b}c"), location);
+    }
+
+    @Test
+    void promptLoginShowsTheFormEvenWithASession() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Pro", "Mpt");
+        Cookie session = loginSession(email);
+
+        MvcResult authorize = mockMvc.perform(get("/o/authorize")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI)
+                .param("response_type", "code")
+                .param("prompt", "login"))
+            .andExpect(status().isFound())
+            .andReturn();
+        String loginLocation = authorize.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertEquals("login", UriComponentsBuilder.fromUriString(loginLocation).build().getQueryParams()
+            .getFirst("prompt"));
+
+        mockMvc.perform(get(loginLocation).cookie(session)).andExpect(status().isOk());
+    }
+
+    @Test
+    void endingASessionWithoutARedirectClearsTheCookie() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "End", "Session");
+        Cookie session = loginSession(email);
+
+        MvcResult result = mockMvc.perform(get("/o/endSession").cookie(session))
+            .andExpect(status().isNoContent())
+            .andReturn();
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(header -> header.startsWith("Idam.Session=;") && header.contains("Max-Age=0")));
+
+        mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loggingOutAnAccessTokenEndsTheUsersBrowserSessions() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Del", "Session");
+        Cookie session = loginSession(email);
+        String accessToken = objectMapper.readTree(exchangeCode(authorizeForCode(email)).andReturn()
+            .getResponse().getContentAsString()).path("access_token").asText();
+
+        mockMvc.perform(delete("/session/" + accessToken)).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void unknownBrowserSessionShowsTheLoginForm() throws Exception {
+        mockMvc.perform(get("/login")
+                .cookie(new Cookie("Idam.Session", "not-a-session"))
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loginIgnoresSurroundingWhitespaceInTheUsername() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Tab", "Complete");
+        mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", email + " ")
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("response_type", "code"))
+            .andExpect(status().isFound());
+    }
+
+    private Cookie loginSession(String email) throws Exception {
+        MvcResult login = mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", email)
+                .param("password", "OnePassword")
+                .param("redirect_uri", REDIRECT_URI)
+                .param("client_id", CLIENT_ID)
+                .param("response_type", "code"))
+            .andExpect(status().isFound())
+            .andReturn();
+        String value = login.getResponse().getHeaders(HttpHeaders.SET_COOKIE).stream()
+            .filter(header -> header.startsWith("Idam.Session="))
+            .reduce((first, second) -> second)
+            .map(header -> header.substring("Idam.Session=".length()).split(";")[0])
+            .orElseThrow();
+        return new Cookie("Idam.Session", value);
+    }
+
     private void addUser(String email, String forename, String surname) throws Exception {
+        addUser(email, forename, surname, false, null);
+    }
+
+    private void addUser(String email, String forename, String surname, boolean quickLogin, String quickLoginLabel)
+        throws Exception {
         IdamTestingUser idamTestingUser = new IdamTestingUser();
         idamTestingUser.setEmail(email);
         idamTestingUser.setForename(forename);
         idamTestingUser.setSurname(surname);
         idamTestingUser.setPassword("OnePassword");
         idamTestingUser.setRoles(List.of(RoleDetails.build("role1"), RoleDetails.build("role2")));
+        idamTestingUser.setQuickLogin(quickLogin);
+        idamTestingUser.setQuickLoginLabel(quickLoginLabel);
 
         mockMvc.perform(post("/testing-support/accounts")
                 .contentType(MediaType.APPLICATION_JSON)

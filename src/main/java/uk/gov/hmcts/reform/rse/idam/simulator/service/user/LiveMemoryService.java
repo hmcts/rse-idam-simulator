@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,4 +85,9 @@ public class LiveMemoryService implements UserService {
         LOG.info("Number of object in memory {}", this.memories.size());
     }
 
+
+    @Override
+    public List<SimObject> getAll() {
+        return new ArrayList<>(memories.values());
+    }
 }

@@ -321,7 +321,7 @@ public class IdamSimulatorController {
         @RequestParam(value = "acr_values", required = false) String acrValues,
         @RequestParam(value = "id_token_hint", required = false) String idTokenHint,
         @RequestParam(value = "login_hint", required = false) String loginHint) {
-        return authorize(clientId, redirectUri, state, responseType, nonce, loginHint);
+        return authorize(clientId, redirectUri, state, responseType, nonce, loginHint, prompt);
     }
 
     @GetMapping("/o/authorize")
@@ -331,8 +331,9 @@ public class IdamSimulatorController {
         @RequestParam(value = "state", required = false) String state,
         @RequestParam(value = "response_type", required = false) String responseType,
         @RequestParam(value = "nonce", required = false) String nonce,
-        @RequestParam(value = "login_hint", required = false) String loginHint) {
-        return authorize(clientId, redirectUri, state, responseType, nonce, loginHint);
+        @RequestParam(value = "login_hint", required = false) String loginHint,
+        @RequestParam(value = "prompt", required = false) String prompt) {
+        return authorize(clientId, redirectUri, state, responseType, nonce, loginHint, prompt);
     }
 
     @GetMapping(value = "/health")
@@ -403,6 +404,8 @@ public class IdamSimulatorController {
             .forename(request.getForename())
             .id(userId)
             .roles(request.getRoles().stream().map(RoleDetails::getCode).collect(Collectors.toList()))
+            .quickLogin(request.isQuickLogin())
+            .quickLoginLabel(request.getQuickLoginLabel())
             .build());
         return new IdamUserAddReponse(userId);
     }
@@ -459,13 +462,14 @@ public class IdamSimulatorController {
                                              String state,
                                              String responseType,
                                              String nonce,
-                                             String loginHint) {
+                                             String loginHint,
+                                             String prompt) {
         LOG.info("Request OpenId Connect Code for clientId {} loginHint {}", clientId, loginHint);
         checkAuthorizeRequiredParams(clientId, redirectUri);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         if (loginHint == null || loginHint.isBlank()) {
-            httpHeaders.add("Location", buildLoginLocation(clientId, redirectUri, state, responseType, nonce));
+            httpHeaders.add("Location", buildLoginLocation(clientId, redirectUri, state, responseType, nonce, prompt));
             return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
         }
 
@@ -487,7 +491,8 @@ public class IdamSimulatorController {
                                       String redirectUri,
                                       String state,
                                       String responseType,
-                                      String nonce) {
+                                      String nonce,
+                                      String prompt) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam(REDIRECT_URI, redirectUri)
             .queryParam(CLIENT_ID, clientId)
@@ -498,6 +503,10 @@ public class IdamSimulatorController {
         }
         if (nonce != null && !nonce.isBlank()) {
             builder.queryParam("nonce", nonce);
+        }
+        // So prompt=login reaches the login page and shows the form even when the browser has a session.
+        if (prompt != null && !prompt.isBlank()) {
+            builder.queryParam("prompt", prompt);
         }
         return builder.build().toUriString();
     }

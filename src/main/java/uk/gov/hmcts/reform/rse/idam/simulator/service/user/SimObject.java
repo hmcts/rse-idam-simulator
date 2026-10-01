@@ -12,6 +12,10 @@ import java.util.List;
 @Getter
 public class SimObject implements Serializable {
 
+    // Fixed at the ID Java computed before quickLogin and quickLoginLabel were added, so users.db files written by
+    // earlier versions still load (persistent storage uses Java serialization).
+    private static final long serialVersionUID = 4818931350247119583L;
+
     public static final String BEARER_ = "Bearer ";
 
     private String clientId;
@@ -35,6 +39,8 @@ public class SimObject implements Serializable {
     private String mostRecentCode;
     private String mostRecentNonce;
     private String lastGeneratedPin;
+    private boolean quickLogin;
+    private String quickLoginLabel;
 
     public void setMostRecentJwToken(String mostRecentJwToken) {
         this.mostRecentJwToken = mostRecentJwToken.replace(BEARER_, "");

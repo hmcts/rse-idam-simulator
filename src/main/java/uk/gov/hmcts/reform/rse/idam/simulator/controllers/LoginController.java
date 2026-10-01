@@ -12,6 +12,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,9 +20,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
+import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.DataflowAnomalyAnalysis"})
 @Controller
@@ -29,22 +37,47 @@ public class LoginController {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
 
+    private static final String IDAM_SESSION_COOKIE = "Idam.Session";
+
     @Autowired
     private SimulatorService simulatorService;
 
+    @Autowired
+    private UserService userService;
+
     @Value("${simulator.jwt.issuer}")
     private String jwtIssuer;
+
+    // Show only the quick login accounts, without the username and password form, e.g. for demos.
+    @Value("${simulator.login.quick-login-only:false}")
+    private boolean quickLoginOnly;
+
+    @Value("${simulator.login.single-sign-on:true}")
+    private boolean singleSignOn;
 
     /*
     Example of a call : http://localhost:5556/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en
     */
     @GetMapping("/login")
-    public String loginPage(Model model,
+    public Object loginPage(Model model,
                             @RequestParam("redirect_uri") String redirectUri,
                             @RequestParam("client_id") String clientId,
                             @RequestParam(value = "state", required = false) String state,
                             @RequestParam(value = "nonce", required = false) String nonce,
-                            @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal) {
+                            @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal,
+                            @RequestParam(value = "prompt", required = false) String prompt,
+                            @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
+        // Like IDAM, a browser that has already logged in is signed straight in to the next service that asks, unless
+        // the service asks for the login page with prompt=login or single sign-on is turned off.
+        boolean promptLogin = prompt != null && List.of(prompt.split(" ")).contains("login");
+        Optional<String> sessionUser = singleSignOn && !promptLogin
+            ? simulatorService.getIdamSessionUser(idamSession) : Optional.empty();
+        if (sessionUser.isPresent()) {
+            LOG.info("Signing in {} from their existing session", sessionUser.get());
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.LOCATION, callbackLocation(sessionUser.get(), redirectUri, clientId, state, nonce));
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        }
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam("client_id", clientId)
             .queryParam("redirect_uri", redirectUri)
@@ -59,6 +92,21 @@ public class LoginController {
         String loginFormAction = builder.build().toUriString();
         LOG.info("Setup login form with loginFormAction {}", loginFormAction);
         model.addAttribute("loginFormAction", loginFormAction);
+        // Offer the accounts created for quick login, saving people looking up test users' emails. The simulator
+        // doesn't check passwords anyway.
+        Map<String, List<SimObject>> accountGroups = userService.getAll().stream()
+            .filter(user -> user.isQuickLogin() && user.getEmail() != null)
+            .sorted(Comparator.comparing((SimObject user) -> nullToEmpty(user.getQuickLoginLabel()))
+                        .thenComparing(user -> nullToEmpty(user.getSurname()))
+                        .thenComparing(user -> nullToEmpty(user.getForename()))
+                        .thenComparing(SimObject::getEmail))
+            .collect(Collectors.groupingBy(
+                user -> user.getQuickLoginLabel() == null ? "Other accounts" : user.getQuickLoginLabel(),
+                LinkedHashMap::new,
+                Collectors.toList()));
+        model.addAttribute("accountGroups", accountGroups);
+        // Without any quick login accounts there would be nothing to choose from, so show the form after all.
+        model.addAttribute("pickerOnly", quickLoginOnly && !accountGroups.isEmpty());
         return "login";
     }
 
@@ -92,12 +140,37 @@ public class LoginController {
                 LOG.info("Reset cookie {}", setCookieHeader);
             });
         }
-        String newIdamSession = simulatorService.getNewIdamSessionValue();
+        String email = username.trim();
+        String locationValue = callbackLocation(email, redirectUri, clientId, state, nonce);
+        String newIdamSession = simulatorService.createIdamSession(email);
 
-        httpHeaders.add(HttpHeaders.SET_COOKIE, "Idam.Session=" + newIdamSession);
+        httpHeaders.add(HttpHeaders.SET_COOKIE, IDAM_SESSION_COOKIE + "=" + newIdamSession + "; Path=/; HttpOnly");
         httpHeaders.add(HttpHeaders.SET_COOKIE, "idam_ui_locales=" + uiLocal);
 
-        String code = simulatorService.geAuthCodeFromUserName(username, nonce);
+        httpHeaders.add("Location", locationValue);
+        LOG.info("Location " + locationValue);
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    /**
+     * Ends the browser session started at login, then returns to the service if it says where.
+     */
+    @GetMapping("/o/endSession")
+    public ResponseEntity<Object> endSession(
+        @RequestParam(value = "post_logout_redirect_uri", required = false) String postLogoutRedirectUri,
+        @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
+        simulatorService.endIdamSession(idamSession);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(HttpHeaders.SET_COOKIE, IDAM_SESSION_COOKIE + "=; Path=/; Max-Age=0; HttpOnly");
+        if (postLogoutRedirectUri == null || postLogoutRedirectUri.isBlank()) {
+            return new ResponseEntity<>(httpHeaders, HttpStatus.NO_CONTENT);
+        }
+        httpHeaders.add(HttpHeaders.LOCATION, postLogoutRedirectUri);
+        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    }
+
+    private String callbackLocation(String email, String redirectUri, String clientId, String state, String nonce) {
+        String code = simulatorService.geAuthCodeFromUserName(email, nonce);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(redirectUri)
             .queryParam("code", code)
             .queryParam("client_id", clientId)
@@ -105,11 +178,11 @@ public class LoginController {
         if (state != null && !state.isBlank()) {
             builder.queryParam("state", state);
         }
-        String locationValue = builder.build().toUriString();
+        return builder.build().toUriString();
+    }
 
-        httpHeaders.add("Location", locationValue);
-        LOG.info("Location " + locationValue);
-        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private String toSetCookieHeader(Cookie cookie) {
@@ -136,6 +209,13 @@ public class LoginController {
     public ResponseEntity<Object> logout(@PathVariable("access_token") String accessToken) {
 
         LOG.info("Logout action for token: {}", accessToken);
+        // Services that log out this way expect the next login to show the form, so end the user's browser sessions.
+        try {
+            userService.getByJwToken(accessToken)
+                .ifPresent(user -> simulatorService.endIdamSessions(user.getEmail()));
+        } catch (Exception e) {
+            LOG.info("Logout token isn't one the simulator issued: {}", e.getMessage());
+        }
         return ResponseEntity.noContent().build();
     }
 
