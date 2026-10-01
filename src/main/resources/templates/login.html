@@ -147,7 +147,7 @@
     <ul>
       <li th:each="account : ${group.value}">
         <a href="#" class="account" th:attr="data-email=${account.email}">
-          <span class="account-name" th:text="${account.forename + ' ' + account.surname}">Name</span>
+          <span class="account-name" th:text="${#strings.trim((account.forename ?: '') + ' ' + (account.surname ?: ''))}">Name</span>
           <span class="account-email" th:text="${account.email}">email</span>
         </a>
       </li>

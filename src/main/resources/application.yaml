@@ -11,7 +11,12 @@ simulator:
   login:
     # Show only the quick login account picker, hiding the username and password form.
     quick-login-only: ${SIMULATOR_LOGIN_QUICK_LOGIN_ONLY:false}
-    # Signs browser sessions (Idam.Session) so they survive restarts. Change it to invalidate every session.
+    # Like IDAM, sign a browser that has already logged in straight in to the next service that asks. A service can
+    # still force the form with prompt=login.
+    single-sign-on: ${SIMULATOR_LOGIN_SINGLE_SIGN_ON:true}
+    # Signs browser sessions (Idam.Session) so they survive restarts; change it to invalidate every session. The
+    # default is public, so anyone can make a session for any user, which is no worse than the simulator not
+    # checking passwords.
     session-secret: ${SIMULATOR_LOGIN_SESSION_SECRET:rse-idam-simulator-session}
   storage:
     type: memory # memory or persistent

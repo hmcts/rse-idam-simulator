@@ -366,12 +366,78 @@ class OpenIdAuthorizeFlowSpringBootTest {
     void tamperedBrowserSessionShowsTheLoginForm() throws Exception {
         String email = uniqueEmail();
         addUser(email, "Tam", "Pered");
+        String victim = uniqueEmail();
+        addUser(victim, "Vic", "Tim");
         String[] parts = loginSession(email).getValue().split("\\.");
-        String otherUser = java.util.Base64.getUrlEncoder().withoutPadding()
-            .encodeToString(("someone-else@hmcts.net|abc").getBytes(StandardCharsets.UTF_8));
+        // A well formed session for someone else, carrying the first user's signature.
+        String forged = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString((System.currentTimeMillis() + "|abc|" + victim).getBytes(StandardCharsets.UTF_8));
 
         mockMvc.perform(get("/login")
-                .cookie(new Cookie("Idam.Session", otherUser + "." + parts[1]))
+                .cookie(new Cookie("Idam.Session", forged + "." + parts[1]))
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loggingOutAnUnknownTokenStillSucceeds() throws Exception {
+        mockMvc.perform(delete("/session/not-a-jwt")).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void singleSignOnKeepsStateAndRedirectUriWithBraces() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Cur", "Ly");
+        Cookie session = loginSession(email);
+
+        MvcResult result = mockMvc.perform(get("/login")
+                .cookie(session)
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", "https://localhost/{tenant}/cb")
+                .param("state", "a{b}c"))
+            .andExpect(status().isFound())
+            .andReturn();
+
+        String location = result.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertTrue(location.startsWith("https://localhost/{tenant}/cb"), location);
+        assertTrue(location.contains("state=a{b}c"), location);
+    }
+
+    @Test
+    void promptLoginShowsTheFormEvenWithASession() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Pro", "Mpt");
+        Cookie session = loginSession(email);
+
+        MvcResult authorize = mockMvc.perform(get("/o/authorize")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI)
+                .param("response_type", "code")
+                .param("prompt", "login"))
+            .andExpect(status().isFound())
+            .andReturn();
+        String loginLocation = authorize.getResponse().getHeader(HttpHeaders.LOCATION);
+        assertEquals("login", UriComponentsBuilder.fromUriString(loginLocation).build().getQueryParams()
+            .getFirst("prompt"));
+
+        mockMvc.perform(get(loginLocation).cookie(session)).andExpect(status().isOk());
+    }
+
+    @Test
+    void endingASessionWithoutARedirectClearsTheCookie() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "End", "Session");
+        Cookie session = loginSession(email);
+
+        MvcResult result = mockMvc.perform(get("/o/endSession").cookie(session))
+            .andExpect(status().isNoContent())
+            .andReturn();
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).stream()
+            .anyMatch(header -> header.startsWith("Idam.Session=;") && header.contains("Max-Age=0")));
+
+        mockMvc.perform(get("/login")
+                .cookie(session)
                 .param("client_id", CLIENT_ID)
                 .param("redirect_uri", REDIRECT_URI))
             .andExpect(status().isOk());

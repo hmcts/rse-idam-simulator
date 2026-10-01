@@ -251,7 +251,8 @@ public class SimulatorService {
      * The session names the user and is signed, so it stays valid if the simulator restarts.
      */
     public String createIdamSession(String username) {
-        String payload = username + "|" + System.currentTimeMillis() + "|" + generateRandomAlphanumeric(16);
+        // The username goes last so that emails containing '|' still parse.
+        String payload = System.currentTimeMillis() + "|" + generateRandomAlphanumeric(16) + "|" + username;
         return encode(payload.getBytes(StandardCharsets.UTF_8)) + "." + encode(sign(payload));
     }
 
@@ -271,10 +272,13 @@ public class SimulatorService {
             if (!MessageDigest.isEqual(sign(payload), Base64.getUrlDecoder().decode(parts[1]))) {
                 return Optional.empty();
             }
-            String[] fields = payload.split("\\|");
-            String username = fields[0];
-            long startedAt = Long.parseLong(fields[1]);
-            if (startedAt <= loggedOutAt.getOrDefault(username.toLowerCase(Locale.ROOT), 0L)) {
+            String[] fields = payload.split("\\|", 3);
+            long startedAt = Long.parseLong(fields[0]);
+            String username = fields[2];
+            // Sessions last as long as the tokens the simulator issues, so a logout can't be undone for longer than
+            // that by a restart forgetting it.
+            if (System.currentTimeMillis() - startedAt > tokenExpirationMs
+                || startedAt <= loggedOutAt.getOrDefault(username.toLowerCase(Locale.ROOT), 0L)) {
                 return Optional.empty();
             }
             return Optional.of(username).filter(user -> userService.getByEmail(user).isPresent());

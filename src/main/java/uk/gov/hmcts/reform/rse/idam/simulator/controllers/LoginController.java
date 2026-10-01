@@ -55,19 +55,28 @@ public class LoginController {
     /*
     Example of a call : http://localhost:5556/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en
     */
+    @Value("${simulator.login.single-sign-on:true}")
+    private boolean singleSignOn;
+
     @GetMapping("/login")
-    public String loginPage(Model model,
+    public Object loginPage(Model model,
                             @RequestParam("redirect_uri") String redirectUri,
                             @RequestParam("client_id") String clientId,
                             @RequestParam(value = "state", required = false) String state,
                             @RequestParam(value = "nonce", required = false) String nonce,
                             @RequestParam(name = "ui_local", defaultValue = "en") String uiLocal,
+                            @RequestParam(value = "prompt", required = false) String prompt,
                             @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
-        // Like IDAM, a browser that has already logged in is signed straight in to the next service that asks.
-        Optional<String> sessionUser = simulatorService.getIdamSessionUser(idamSession);
+        // Like IDAM, a browser that has already logged in is signed straight in to the next service that asks, unless
+        // the service asks for the login page with prompt=login or single sign-on is turned off.
+        boolean promptLogin = prompt != null && List.of(prompt.split(" ")).contains("login");
+        Optional<String> sessionUser = singleSignOn && !promptLogin
+            ? simulatorService.getIdamSessionUser(idamSession) : Optional.empty();
         if (sessionUser.isPresent()) {
             LOG.info("Signing in {} from their existing session", sessionUser.get());
-            return "redirect:" + callbackLocation(sessionUser.get(), redirectUri, clientId, state, nonce);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.LOCATION, callbackLocation(sessionUser.get(), redirectUri, clientId, state, nonce));
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
         }
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/login")
             .queryParam("client_id", clientId)
@@ -204,7 +213,7 @@ public class LoginController {
         try {
             userService.getByJwToken(accessToken)
                 .ifPresent(user -> simulatorService.endIdamSessions(user.getEmail()));
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             LOG.info("Logout token isn't one the simulator issued: {}", e.getMessage());
         }
         return ResponseEntity.noContent().build();
