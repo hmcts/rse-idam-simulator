@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,6 +47,10 @@ public class LoginController {
 
     @Value("${simulator.jwt.issuer}")
     private String jwtIssuer;
+
+    // Show only the quick login accounts, without the username and password form, e.g. for demos.
+    @Value("${simulator.login.quick-login-only:false}")
+    private boolean quickLoginOnly;
 
     /*
     Example of a call : http://localhost:5556/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en
@@ -80,7 +85,7 @@ public class LoginController {
         model.addAttribute("loginFormAction", loginFormAction);
         // Offer the accounts created for quick login, saving people looking up test users' emails. The simulator
         // doesn't check passwords anyway.
-        model.addAttribute("accountGroups", userService.getAll().stream()
+        Map<String, List<SimObject>> accountGroups = userService.getAll().stream()
             .filter(user -> user.isQuickLogin() && user.getEmail() != null)
             .sorted(Comparator.comparing((SimObject user) -> nullToEmpty(user.getQuickLoginLabel()))
                         .thenComparing(user -> nullToEmpty(user.getSurname()))
@@ -89,7 +94,10 @@ public class LoginController {
             .collect(Collectors.groupingBy(
                 user -> user.getQuickLoginLabel() == null ? "Other accounts" : user.getQuickLoginLabel(),
                 LinkedHashMap::new,
-                Collectors.toList())));
+                Collectors.toList()));
+        model.addAttribute("accountGroups", accountGroups);
+        // Without any quick login accounts there would be nothing to choose from, so show the form after all.
+        model.addAttribute("pickerOnly", quickLoginOnly && !accountGroups.isEmpty());
         return "login";
     }
 

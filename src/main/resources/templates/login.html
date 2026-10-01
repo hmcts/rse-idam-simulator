@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>  RSE Idam Simulator Login Form </title>
   <style>
+    [hidden] {
+      display: none !important;
+    }
     body {
       margin: 0;
       min-height: 100vh;
@@ -126,9 +129,9 @@
 <div class="header">HMCTS IDAM Simulator</div>
 <main>
 <center> <h1> RSE Idam Simulator Login Form </h1> </center>
-<p class="hint">Sign in with a test account. This is a simulator: it only checks that the account exists.</p>
+<p class="hint" th:hidden="${pickerOnly}">Sign in with a test account. This is a simulator: it only checks that the account exists.</p>
 <form  action="#" th:action="${loginFormAction}" name="loginForm" method="post">
-  <div class="container">
+  <div class="container" th:hidden="${pickerOnly}">
     <label for="username">Username : </label>
     <input type="text" placeholder="Enter Username" name="username" id="username" autocomplete="username">
     <label for="password">Password : </label>
@@ -137,8 +140,8 @@
   </div>
 </form>
 <section class="accounts" th:if="${accountGroups != null and !accountGroups.isEmpty()}">
-  <h2>Quick login</h2>
-  <p class="hint">Choose who to sign in as.</p>
+  <h2 th:text="${pickerOnly} ? 'Choose who to sign in as' : 'Quick login'">Quick login</h2>
+  <p class="hint" th:text="${pickerOnly} ? 'Select your name to sign in.' : 'Choose who to sign in as.'">Choose who to sign in as.</p>
   <th:block th:each="group : ${accountGroups}">
     <h3 th:text="${group.key}">Label</h3>
     <ul>

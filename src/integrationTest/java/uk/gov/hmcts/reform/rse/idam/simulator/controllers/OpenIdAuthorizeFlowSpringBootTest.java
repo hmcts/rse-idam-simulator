@@ -340,6 +340,17 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
+    void loginFormIsShownByDefaultAlongsideQuickLogin() throws Exception {
+        addUser(uniqueEmail(), "Visible", "Form", true, "District Judge");
+        mockMvc.perform(get("/login")
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("<div class=\"container\">")))
+            .andExpect(content().string(containsString("Quick login")));
+    }
+
+    @Test
     void loginPageHidesAccountsNotCreatedForQuickLogin() throws Exception {
         String email = uniqueEmail();
         addUser(email, "System", "User");

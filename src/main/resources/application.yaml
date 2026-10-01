@@ -8,6 +8,9 @@ simulator:
   openid:
     base-url: http://localhost:5556
     base-url-outside-network: http://localhost:5556
+  login:
+    # Show only the quick login account picker, hiding the username and password form.
+    quick-login-only: ${SIMULATOR_LOGIN_QUICK_LOGIN_ONLY:false}
   storage:
     type: memory # memory or persistent
     persistent-file: users.db # used if storage type is persistent
