@@ -362,6 +362,21 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
+    void tamperedBrowserSessionShowsTheLoginForm() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Tam", "Pered");
+        String[] parts = loginSession(email).getValue().split("\\.");
+        String otherUser = java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(("someone-else@hmcts.net|abc").getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(get("/login")
+                .cookie(new Cookie("Idam.Session", otherUser + "." + parts[1]))
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void unknownBrowserSessionShowsTheLoginForm() throws Exception {
         mockMvc.perform(get("/login")
                 .cookie(new Cookie("Idam.Session", "not-a-session"))

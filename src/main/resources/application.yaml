@@ -11,6 +11,8 @@ simulator:
   login:
     # Show only the quick login account picker, hiding the username and password form.
     quick-login-only: ${SIMULATOR_LOGIN_QUICK_LOGIN_ONLY:false}
+    # Signs browser sessions (Idam.Session) so they survive restarts. Change it to invalidate every session.
+    session-secret: ${SIMULATOR_LOGIN_SESSION_SECRET:rse-idam-simulator-session}
   storage:
     type: memory # memory or persistent
     persistent-file: users.db # used if storage type is persistent

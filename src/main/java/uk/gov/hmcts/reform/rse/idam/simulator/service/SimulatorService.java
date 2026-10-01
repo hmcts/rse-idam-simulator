@@ -12,11 +12,17 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.token.JwTokenGeneratorServ
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.SimObject;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.UserService;
 
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.LawOfDemeter"})
 @Component
@@ -32,7 +38,11 @@ public class SimulatorService {
     @Autowired
     private UserService userService;
 
-    private final Map<String, String> idamSessions = new ConcurrentHashMap<>();
+    // Browser sessions are signed rather than stored, so they survive the simulator restarting.
+    @Value("${simulator.login.session-secret:rse-idam-simulator-session}")
+    private String sessionSecret;
+
+    private final Set<String> endedSessions = ConcurrentHashMap.newKeySet();
 
     @Value("${simulator.jwt.issuer}")
     private String issuer;
@@ -233,27 +243,53 @@ public class SimulatorService {
 
     /**
      * Starts a browser session for a user who has logged in, so later logins in the same browser can skip the form.
+     * The session names the user and is signed, so it stays valid if the simulator restarts.
      */
     public String createIdamSession(String username) {
-        String session = getNewIdamSessionValue();
-        idamSessions.put(session, username);
-        return session;
+        String payload = username + "|" + generateRandomAlphanumeric(16);
+        return encode(payload.getBytes(StandardCharsets.UTF_8)) + "." + encode(sign(payload));
     }
 
     /**
-     * The user a browser session belongs to, if the session is known and the user still exists.
+     * The user a browser session belongs to, if the session is genuine, hasn't ended and the user still exists.
      */
     public Optional<String> getIdamSessionUser(String session) {
-        if (session == null) {
+        if (session == null || endedSessions.contains(session)) {
             return Optional.empty();
         }
-        return Optional.ofNullable(idamSessions.get(session))
-            .filter(username -> userService.getByEmail(username).isPresent());
+        String[] parts = session.split("\\.");
+        if (parts.length != 2) {
+            return Optional.empty();
+        }
+        try {
+            String payload = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+            if (!MessageDigest.isEqual(sign(payload), Base64.getUrlDecoder().decode(parts[1]))) {
+                return Optional.empty();
+            }
+            String username = payload.substring(0, payload.lastIndexOf('|'));
+            return Optional.of(username).filter(user -> userService.getByEmail(user).isPresent());
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            return Optional.empty();
+        }
     }
 
     public void endIdamSession(String session) {
         if (session != null) {
-            idamSessions.remove(session);
+            endedSessions.add(session);
         }
+    }
+
+    private byte[] sign(String payload) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(sessionSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Unable to sign the IDAM session", e);
+        }
+    }
+
+    private static String encode(byte[] bytes) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }
