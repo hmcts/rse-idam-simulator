@@ -52,12 +52,12 @@ public class LoginController {
     @Value("${simulator.login.quick-login-only:false}")
     private boolean quickLoginOnly;
 
-    /*
-    Example of a call : http://localhost:5556/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en
-    */
     @Value("${simulator.login.single-sign-on:true}")
     private boolean singleSignOn;
 
+    /*
+    Example of a call : http://localhost:5556/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en
+    */
     @GetMapping("/login")
     public Object loginPage(Model model,
                             @RequestParam("redirect_uri") String redirectUri,

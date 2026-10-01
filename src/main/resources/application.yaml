@@ -14,6 +14,7 @@ simulator:
     # Like IDAM, sign a browser that has already logged in straight in to the next service that asks. A service can
     # still force the form with prompt=login.
     single-sign-on: ${SIMULATOR_LOGIN_SINGLE_SIGN_ON:true}
+    # Browser sessions last as long as simulator.jwt.expiration, so shortening token expiry shortens them too.
     # Signs browser sessions (Idam.Session) so they survive restarts; change it to invalidate every session. The
     # default is public, so anyone can make a session for any user, which is no worse than the simulator not
     # checking passwords.
