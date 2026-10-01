@@ -17,6 +17,8 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -43,6 +45,9 @@ public class SimulatorService {
     private String sessionSecret;
 
     private final Set<String> endedSessions = ConcurrentHashMap.newKeySet();
+
+    // When each user last logged out; their sessions started before then are no longer honoured.
+    private final Map<String, Long> loggedOutAt = new ConcurrentHashMap<>();
 
     @Value("${simulator.jwt.issuer}")
     private String issuer;
@@ -246,7 +251,7 @@ public class SimulatorService {
      * The session names the user and is signed, so it stays valid if the simulator restarts.
      */
     public String createIdamSession(String username) {
-        String payload = username + "|" + generateRandomAlphanumeric(16);
+        String payload = username + "|" + System.currentTimeMillis() + "|" + generateRandomAlphanumeric(16);
         return encode(payload.getBytes(StandardCharsets.UTF_8)) + "." + encode(sign(payload));
     }
 
@@ -266,7 +271,12 @@ public class SimulatorService {
             if (!MessageDigest.isEqual(sign(payload), Base64.getUrlDecoder().decode(parts[1]))) {
                 return Optional.empty();
             }
-            String username = payload.substring(0, payload.lastIndexOf('|'));
+            String[] fields = payload.split("\\|");
+            String username = fields[0];
+            long startedAt = Long.parseLong(fields[1]);
+            if (startedAt <= loggedOutAt.getOrDefault(username.toLowerCase(Locale.ROOT), 0L)) {
+                return Optional.empty();
+            }
             return Optional.of(username).filter(user -> userService.getByEmail(user).isPresent());
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             return Optional.empty();
@@ -277,6 +287,14 @@ public class SimulatorService {
         if (session != null) {
             endedSessions.add(session);
         }
+    }
+
+    /**
+     * Ends every browser session a user has started so far, e.g. when a service logs them out through
+     * DELETE /session/{access_token} rather than /o/endSession.
+     */
+    public void endIdamSessions(String username) {
+        loggedOutAt.put(username.toLowerCase(Locale.ROOT), System.currentTimeMillis());
     }
 
     private byte[] sign(String payload) {

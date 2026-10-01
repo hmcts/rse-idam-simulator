@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -371,6 +372,23 @@ class OpenIdAuthorizeFlowSpringBootTest {
 
         mockMvc.perform(get("/login")
                 .cookie(new Cookie("Idam.Session", otherUser + "." + parts[1]))
+                .param("client_id", CLIENT_ID)
+                .param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void loggingOutAnAccessTokenEndsTheUsersBrowserSessions() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Del", "Session");
+        Cookie session = loginSession(email);
+        String accessToken = objectMapper.readTree(exchangeCode(authorizeForCode(email)).andReturn()
+            .getResponse().getContentAsString()).path("access_token").asText();
+
+        mockMvc.perform(delete("/session/" + accessToken)).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/login")
+                .cookie(session)
                 .param("client_id", CLIENT_ID)
                 .param("redirect_uri", REDIRECT_URI))
             .andExpect(status().isOk());

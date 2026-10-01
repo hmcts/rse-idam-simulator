@@ -200,6 +200,13 @@ public class LoginController {
     public ResponseEntity<Object> logout(@PathVariable("access_token") String accessToken) {
 
         LOG.info("Logout action for token: {}", accessToken);
+        // Services that log out this way expect the next login to show the form, so end the user's browser sessions.
+        try {
+            userService.getByJwToken(accessToken)
+                .ifPresent(user -> simulatorService.endIdamSessions(user.getEmail()));
+        } catch (RuntimeException e) {
+            LOG.info("Logout token isn't one the simulator issued: {}", e.getMessage());
+        }
         return ResponseEntity.noContent().build();
     }
 
