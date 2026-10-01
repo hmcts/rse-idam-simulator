@@ -128,7 +128,7 @@
 <body>
 <div class="header">HMCTS IDAM Simulator</div>
 <main>
-<center> <h1> RSE Idam Simulator Login Form </h1> </center>
+<center th:hidden="${pickerOnly}"> <h1> RSE Idam Simulator Login Form </h1> </center>
 <p class="hint" th:hidden="${pickerOnly}">Sign in with a test account. This is a simulator: it only checks that the account exists.</p>
 <form  action="#" th:action="${loginFormAction}" name="loginForm" method="post">
   <div class="container" th:hidden="${pickerOnly}">

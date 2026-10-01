@@ -62,6 +62,8 @@ class QuickLoginOnlySpringBootTest {
             .andExpect(content().string(matchesPattern(HIDDEN_FORM)))
             .andExpect(content().string(containsString("id=\"username\"")))
             .andExpect(content().string(containsString("Choose who to sign in as")))
+            .andExpect(content().string(
+                containsString("<center hidden=\"hidden\"> <h1> RSE Idam Simulator Login Form")))
             .andExpect(content().string(containsString("data-email=\"judge@example.com\"")));
     }
 
@@ -70,6 +72,7 @@ class QuickLoginOnlySpringBootTest {
         mockMvc.perform(get("/login").param("client_id", "hmcts").param("redirect_uri", "https://localhost/receiver"))
             .andExpect(status().isOk())
             .andExpect(content().string(not(matchesPattern(HIDDEN_FORM))))
+            .andExpect(content().string(containsString("<center> <h1> RSE Idam Simulator Login Form")))
             .andExpect(content().string(containsString("id=\"username\"")));
     }
 
