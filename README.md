@@ -10,9 +10,9 @@ It can be run from a docker image or from IntelliJ (so with debugger potentially
 
 Execute these 3 commands
 ```
-az acr login --name hmctspublic
-docker pull hmctspublic.azurecr.io/hmcts/rse/rse-idam-simulator:latest
-docker run -d -P --name rse-idam-simulator -p 5556:5556 hmctspublic.azurecr.io/hmcts/rse/rse-idam-simulator:latest
+az acr login --name hmctsprod
+docker pull hmctsprod.azurecr.io/hmcts/rse/rse-idam-simulator:latest
+docker run -d -P --name rse-idam-simulator -p 5556:5556 hmctsprod.azurecr.io/hmcts/rse/rse-idam-simulator:latest
 ```
 
 ## Running/Debugging the application with IntelliJ Idea
