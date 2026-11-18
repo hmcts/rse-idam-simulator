@@ -13,6 +13,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKey;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.List;
 
@@ -84,6 +88,63 @@ public class JsonWebKeyServiceTest {
     }
 
     @Test
+    public void shouldRejectAnOverrideBelow2048BitsWithoutLeakingIt() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(1024);
+        KeyPair keyPair = generator.generateKeyPair();
+        RSAKey weakKey = new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
+            .privateKey((RSAPrivateKey) keyPair.getPrivate())
+            .keyID("weak-kid")
+            .build();
+
+        assertRejectedWithoutLeaking(weakKey, "The simulator signing key must be at least 2048 bits");
+    }
+
+    @Test
+    public void shouldRejectAnOverrideWhosePrivatePartDoesNotMatchWithoutLeakingIt() throws JOSEException {
+        RSAKey publicPart = generateRsaKey("mismatched-kid");
+        RSAKey privatePart = generateRsaKey("other-kid");
+        RSAKey mismatched = new RSAKey.Builder(publicPart.toRSAPublicKey())
+            .privateExponent(privatePart.getPrivateExponent())
+            .keyID("mismatched-kid")
+            .build();
+
+        assertRejectedWithoutLeaking(mismatched, "The simulator signing key cannot sign and verify");
+    }
+
+    @Test
+    public void shouldRejectAnOverrideWithMismatchedCrtParametersWithoutLeakingIt() throws JOSEException {
+        RSAKey publicPart = generateRsaKey("mismatched-kid");
+        RSAKey privatePart = generateRsaKey("other-kid");
+        RSAKey mismatched = new RSAKey.Builder(publicPart.toRSAPublicKey())
+            .privateExponent(privatePart.getPrivateExponent())
+            .firstPrimeFactor(privatePart.getFirstPrimeFactor())
+            .secondPrimeFactor(privatePart.getSecondPrimeFactor())
+            .firstFactorCRTExponent(privatePart.getFirstFactorCRTExponent())
+            .secondFactorCRTExponent(privatePart.getSecondFactorCRTExponent())
+            .firstCRTCoefficient(privatePart.getFirstCRTCoefficient())
+            .keyID("mismatched-kid")
+            .build();
+
+        assertRejectedWithoutLeaking(mismatched, "The simulator signing key cannot sign and verify");
+    }
+
+    @Test
+    public void shouldRejectAnOverrideWithoutAKeyIdWithoutLeakingIt() throws JOSEException {
+        RSAKey withoutKeyId = new RSAKeyGenerator(2048).generate();
+
+        assertRejectedWithoutLeaking(withoutKeyId, "The simulator signing key has no key id");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   "})
+    public void shouldRejectAnOverrideWithABlankKeyIdWithoutLeakingIt(String blankKeyId) throws JOSEException {
+        RSAKey blankKid = new RSAKeyGenerator(2048).keyID(blankKeyId).generate();
+
+        assertRejectedWithoutLeaking(blankKid, "The simulator signing key has no key id");
+    }
+
+    @Test
     public void shouldPublishOnlyPublicParameters() {
         JsonWebKeyService jsonWebKeyService = new JsonWebKeyService("");
         RSAKey rsaKey = jsonWebKeyService.getRsaKey();
@@ -110,6 +171,17 @@ public class JsonWebKeyServiceTest {
 
         assertEquals(restartedKey.getKeyID(), signedJwt.getHeader().getKeyID());
         assertTrue(signedJwt.verify(new RSASSAVerifier(restartedKey.toPublicJWK())));
+    }
+
+    private void assertRejectedWithoutLeaking(RSAKey rsaKey, String expectedMessage) {
+        TokenGenerationException exception = assertThrows(
+            TokenGenerationException.class, () -> new JsonWebKeyService(rsaKey.toJSONString()));
+
+        assertEquals(expectedMessage, exception.getMessage());
+        assertThat(exception).hasNoCause();
+        assertThat(exception.toString())
+            .doesNotContain(rsaKey.getPrivateExponent().toString())
+            .doesNotContain(rsaKey.getModulus().toString());
     }
 
     private RSAKey generateRsaKey(String keyId) throws JOSEException {
