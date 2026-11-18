@@ -43,6 +43,7 @@ public class SimulatorServiceCachedTokenTest {
     private static final String CLIENT_ID = "client";
     private static final String GRANT_TYPE = "password";
     private static final long EXPIRATION_MS = 3_600_000;
+    private static final String ISSUER = "issuer";
 
     private final JsonWebKeyService jsonWebKeyService = new JsonWebKeyService("");
 
@@ -75,6 +76,34 @@ public class SimulatorServiceCachedTokenTest {
 
         assertNotEquals(foreignToken, token);
         assertVerifiesAndIsUnexpired(token);
+    }
+
+    @ParameterizedTest
+    @MethodSource("stores")
+    public void shouldRegenerateATokenFromAnotherIssuer(String store) throws JOSEException, ParseException {
+        SimulatorService service = simulatorService(store);
+        String otherIssuerToken = signedToken(
+            jsonWebKeyService.getRsaKey(), Instant.now().plus(Duration.ofHours(1)), "another-issuer");
+        service.updateTokenInUser(EMAIL, otherIssuerToken);
+
+        String token = service.generateACachedToken(EMAIL, CLIENT_ID, GRANT_TYPE);
+
+        assertNotEquals(otherIssuerToken, token);
+        assertVerifiesAndIsUnexpired(token);
+        assertEquals(ISSUER, SignedJWT.parse(token).getJWTClaimsSet().getIssuer());
+    }
+
+    @ParameterizedTest
+    @MethodSource("stores")
+    public void shouldRegenerateATokenWithoutAnIssuer(String store) throws JOSEException, ParseException {
+        SimulatorService service = simulatorService(store);
+        String noIssuerToken = signedToken(jsonWebKeyService.getRsaKey(), Instant.now().plus(Duration.ofHours(1)));
+        service.updateTokenInUser(EMAIL, noIssuerToken);
+
+        String token = service.generateACachedToken(EMAIL, CLIENT_ID, GRANT_TYPE);
+
+        assertNotEquals(noIssuerToken, token);
+        assertEquals(ISSUER, SignedJWT.parse(token).getJWTClaimsSet().getIssuer());
     }
 
     @ParameterizedTest
@@ -146,13 +175,17 @@ public class SimulatorServiceCachedTokenTest {
         SimulatorService service = new SimulatorService();
         ReflectionTestUtils.setField(service, "jwTokenGenerator", jwTokenGenerator);
         ReflectionTestUtils.setField(service, "userService", userService);
-        ReflectionTestUtils.setField(service, "issuer", "issuer");
+        ReflectionTestUtils.setField(service, "issuer", ISSUER);
         ReflectionTestUtils.setField(service, "tokenExpirationMs", EXPIRATION_MS);
         return service;
     }
 
     private String signedToken(RSAKey rsaKey, Instant expiry) throws JOSEException {
-        JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder().claim("sub", EMAIL);
+        return signedToken(rsaKey, expiry, null);
+    }
+
+    private String signedToken(RSAKey rsaKey, Instant expiry, String issuer) throws JOSEException {
+        JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder().claim("sub", EMAIL).issuer(issuer);
         if (expiry != null) {
             claims.expirationTime(Date.from(expiry));
         }

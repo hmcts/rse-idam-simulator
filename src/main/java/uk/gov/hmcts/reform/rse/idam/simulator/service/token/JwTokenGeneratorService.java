@@ -93,15 +93,17 @@ public class JwTokenGeneratorService {
         return signedJwt.serialize();
     }
 
-    public boolean isUnexpiredAndSignedByCurrentKey(String token) {
+    public boolean isUnexpiredAndSignedByCurrentKey(String token, String issuer) {
         if (token == null) {
             return false;
         }
         try {
             SignedJWT signedJwt = SignedJWT.parse(token);
-            Date expiry = signedJwt.getJWTClaimsSet().getExpirationTime();
+            JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
+            Date expiry = claims.getExpirationTime();
             return expiry != null
                 && expiry.after(new Date())
+                && issuer.equals(claims.getIssuer())
                 && signedJwt.verify(new RSASSAVerifier(jsonWebKeyService.getRsaKey().toPublicJWK()));
         } catch (ParseException | JOSEException | RuntimeException exception) {
             return false;

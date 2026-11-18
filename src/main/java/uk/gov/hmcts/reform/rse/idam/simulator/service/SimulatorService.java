@@ -93,12 +93,17 @@ public class SimulatorService {
             );
         }
         String cachedToken = userInMemory.get().getMostRecentJwToken();
-        if (!jwTokenGenerator.isUnexpiredAndSignedByCurrentKey(cachedToken)) {
-            LOG.info("Token not existing, expired or not signed by the current key and will be regenerated");
+        if (!jwTokenGenerator.isUnexpiredAndSignedByCurrentKey(cachedToken, issuer)) {
+            LOG.info("Token not existing, expired, not signed by the current key or from another issuer"
+                         + " and will be regenerated");
             return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
         }
         LOG.info("Use token in cache");
         return cachedToken;
+    }
+
+    public synchronized void saveUser(String userId, SimObject user) {
+        userService.putSimObject(userId, user);
     }
 
     public synchronized void updateTokenInUser(String username, String token) {
