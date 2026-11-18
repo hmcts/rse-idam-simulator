@@ -3,9 +3,9 @@ package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
@@ -27,16 +27,16 @@ public class IdamSimulatorControllersNegativeHappyPathTest {
     public static final String AUTHORIZATION = "authorization";
     public static final String VALIDE_CODE = "123456";
 
-    @MockBean
+    @MockitoBean
     OpenIdConfigService openIdConfigService;
 
-    @MockBean
+    @MockitoBean
     JsonWebKeyService jsonWebKeyService;
 
-    @MockBean
+    @MockitoBean
     private SimulatorService simulatorService;
 
-    @MockBean
+    @MockitoBean
     private UserService userService;
 
     @Autowired

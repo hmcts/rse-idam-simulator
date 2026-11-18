@@ -1,7 +1,5 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +11,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.reform.idam.client.IdamApi;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
 import uk.gov.hmcts.reform.idam.client.models.AuthenticateUserResponse;
@@ -292,8 +292,8 @@ public class IdamClientSpringBootTest {
 
     private String extractUserUid(String postForObject) {
         try {
-            return objectMapper.readTree(postForObject).path("uuid").asText();
-        } catch (JsonProcessingException jse) {
+            return objectMapper.readTree(postForObject).path("uuid").asString();
+        } catch (JacksonException jse) {
             throw new JsonTestException("impossible to extract uuid", jse);
         }
     }

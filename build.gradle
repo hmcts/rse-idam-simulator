@@ -3,9 +3,9 @@ plugins {
   id 'checkstyle'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.1.5'
+  id 'org.springframework.boot' version '4.1.2'
   id 'org.owasp.dependencycheck' version '13.0.0'
-  id 'com.github.ben-manes.versions' version '0.67.0'
+  id 'io.github.ben-manes.versions' version '0.67.0'
   id 'org.sonarqube' version '7.6.0.18749'
   id 'io.freefair.lombok' version '9.8.3'
 }
@@ -15,7 +15,7 @@ version = '0.0.1'
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(21)
   }
 }
 
@@ -39,13 +39,15 @@ tasks.register('integrationTest', Test) {
   useJUnitPlatform()
 }
 
-check.dependsOn(integrationTest)
+tasks.named('check') {
+  dependsOn(tasks.named('integrationTest'))
+}
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
   options.compilerArgs << "-Xlint:unchecked" << "-Werror"
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
   useJUnitPlatform()
 
   testLogging {
@@ -53,11 +55,11 @@ tasks.withType(Test) {
   }
 }
 
-test {
+tasks.named('test') {
   failFast = true
 }
 
-task integration(type: Test) {
+tasks.register('integration', Test) {
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
@@ -67,12 +69,12 @@ task integration(type: Test) {
 
 checkstyle {
   maxWarnings = 0
-  toolVersion = '8.29'
+  toolVersion = '14.4.0'
   getConfigDirectory().set(new File(rootDir, 'config/checkstyle'))
 }
 
-jacocoTestReport {
-  executionData(integration)
+tasks.named('jacocoTestReport') {
+  executionData(tasks.named('integration').get())
   reports {
     xml.required = true
     csv.required = false
@@ -84,7 +86,7 @@ jacocoTestReport {
 
 
 // before committing a change, make sure task still works
-dependencyUpdates {
+tasks.named('dependencyUpdates') {
   def isNonStable = { String version ->
     def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { qualifier -> version.toUpperCase().contains(qualifier) }
     def regex = /^[0-9,.v-]+$/
@@ -110,28 +112,39 @@ dependencyCheck {
 
 repositories {
   mavenCentral()
-  maven { url 'https://jitpack.io' }
+  maven { url = 'https://jitpack.io' }
+}
+
+dependencyManagement {
+  imports {
+    mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.4'
+  }
 }
 
 dependencies {
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf'
+  implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+  implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
-  implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.26.1'
-  implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.26.1'
+  implementation 'org.apache.logging.log4j:log4j-api:2.26.1'
+  implementation 'org.apache.logging.log4j:log4j-to-slf4j:2.26.1'
 
-  implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.9'
-  implementation group: 'org.mapdb', name: 'mapdb', version: '3.1.0'
+  implementation 'com.nimbusds:nimbus-jose-jwt:10.10'
+  implementation 'org.mapdb:mapdb:3.1.0'
 
-  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'com.github.hmcts', name: 'idam-java-client', version: '3.0.2'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+  testImplementation 'com.github.hmcts:idam-java-client:4.0.0'
 
-  testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-contract-wiremock', version: '4.3.4'
+  testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:5.0.3'
+
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-mainClassName = 'uk.gov.hmcts.reform.rse.idam.simulator.Application'
+application {
+  mainClass = 'uk.gov.hmcts.reform.rse.idam.simulator.Application'
+}
 
-bootJar {
+tasks.named('bootJar') {
   getArchiveFileName().set(provider {
     'rse-idam-simulator.jar'
   })

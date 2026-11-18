@@ -3,13 +3,13 @@ package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKey;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKeySet;
 
+import java.util.Base64;
 import java.util.Collections;
 
 @Component
@@ -46,7 +46,7 @@ public class JsonWebKeyService {
         try {
             synchronized (this) {
                 RSAKey rsaJwk = new RSAKeyGenerator(2048)
-                    .keyID(Base64.encodeBase64String(Long.toString(System.nanoTime()).getBytes()))
+                    .keyID(Base64.getEncoder().encodeToString(Long.toString(System.nanoTime()).getBytes()))
                     .generate();
 
                 LOG.info("New Idam Simulator RSA Key generated: {}", rsaJwk.toString());

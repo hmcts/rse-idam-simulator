@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.user;
 
 import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.util.JSONObjectUtils;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +33,10 @@ public class LiveMemoryService implements UserService {
     @Override
     @SneakyThrows
     public Optional<SimObject> getByJwToken(String bearerToken) {
-        var email = JWSObject.parse(bearerToken.replace(SimObject.BEARER_, ""))
-            .getPayload().toJSONObject()
-            .getAsString("sub");
+        var email = JSONObjectUtils.getString(
+            JWSObject.parse(bearerToken.replace(SimObject.BEARER_, "")).getPayload().toJSONObject(),
+            "sub"
+        );
         return memories.values().stream()
             .filter(simObject -> simObject != null && simObject.getEmail() != null)
             .filter(simObject -> simObject.getEmail()

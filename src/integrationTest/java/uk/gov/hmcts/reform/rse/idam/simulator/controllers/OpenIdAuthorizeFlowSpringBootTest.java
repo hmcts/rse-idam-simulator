@@ -1,14 +1,12 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,6 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.util.UriComponentsBuilder;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.IdamTestingUser;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.RoleDetails;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.SimulatorService;
@@ -106,8 +106,8 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andReturn();
 
         JsonNode tokenJson = objectMapper.readTree(tokenResult.getResponse().getContentAsString());
-        String accessToken = tokenJson.path("access_token").asText();
-        String idToken = tokenJson.path("id_token").asText();
+        String accessToken = tokenJson.path("access_token").asString();
+        String idToken = tokenJson.path("id_token").asString();
         assertNotNull(accessToken);
         assertTrue(!accessToken.isBlank());
         assertNotNull(idToken);
@@ -173,7 +173,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andReturn();
 
         JsonNode tokenJson = objectMapper.readTree(tokenResult.getResponse().getContentAsString());
-        String idToken = tokenJson.path("id_token").asText();
+        String idToken = tokenJson.path("id_token").asString();
         assertEquals(nonce, SignedJWT.parse(idToken).getJWTClaimsSet().getStringClaim("nonce"));
     }
 
@@ -449,7 +449,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
         addUser(email, "Del", "Session");
         Cookie session = loginSession(email);
         String accessToken = objectMapper.readTree(exchangeCode(authorizeForCode(email)).andReturn()
-            .getResponse().getContentAsString()).path("access_token").asText();
+            .getResponse().getContentAsString()).path("access_token").asString();
 
         mockMvc.perform(delete("/session/" + accessToken)).andExpect(status().isNoContent());
 
@@ -531,7 +531,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andExpect(status().isOk())
             .andReturn();
         JsonNode discoveryJson = objectMapper.readTree(discoveryResult.getResponse().getContentAsString());
-        return discoveryJson.path("issuer").asText();
+        return discoveryJson.path("issuer").asString();
     }
 
     private String authorizeForCode(String email) throws Exception {
