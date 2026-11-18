@@ -1,15 +1,18 @@
 package uk.gov.hmcts.reform.rse.idam.simulator.service.token;
 
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKey;
 import uk.gov.hmcts.reform.rse.idam.simulator.controllers.domain.JsonWebKeySet;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.Collections;
 
 @Component
@@ -17,12 +20,14 @@ public class JsonWebKeyService {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonWebKeyService.class);
 
-    private final RSAKey generatedRsaKey;
+    private static final String DEFAULT_SIGNING_KEY_RESOURCE = "/simulator-signing-key.json";
+
+    private final RSAKey signingRsaKey;
     private final JsonWebKeySet generatedKeySet;
 
-    public JsonWebKeyService() {
-        generatedRsaKey = generateNewRsaKey();
-        generatedKeySet = generateNewJwkConfigSet(generatedRsaKey);
+    public JsonWebKeyService(@Value("${simulator.jwt.signing-key:}") String signingKey) {
+        signingRsaKey = parseSigningKey(StringUtils.hasText(signingKey) ? signingKey : readDefaultSigningKey());
+        generatedKeySet = generateNewJwkConfigSet(signingRsaKey);
     }
 
     /**
@@ -42,27 +47,39 @@ public class JsonWebKeyService {
         return jsonWebKeySet;
     }
 
-    public final RSAKey generateNewRsaKey() {
-        try {
-            synchronized (this) {
-                RSAKey rsaJwk = new RSAKeyGenerator(2048)
-                    .keyID(Base64.encodeBase64String(Long.toString(System.nanoTime()).getBytes()))
-                    .generate();
-
-                LOG.info("New Idam Simulator RSA Key generated: {}", rsaJwk.toString());
-                return rsaJwk;
-            }
-        } catch (JOSEException josee) {
-            throw new TokenGenerationException("Impossible to generate RSA Key", josee);
-        }
-    }
-
     public JsonWebKeySet getJwkConfigSet() {
         return generatedKeySet;
     }
 
     public RSAKey  getRsaKey() {
-        return generatedRsaKey;
+        return signingRsaKey;
+    }
+
+    /**
+     * The parse failure is deliberately not chained: its message can quote the key material.
+     */
+    private static RSAKey parseSigningKey(String signingKey) {
+        RSAKey rsaKey;
+        try {
+            rsaKey = RSAKey.parse(signingKey);
+        } catch (ParseException | IllegalArgumentException exception) {
+            throw new TokenGenerationException("The simulator signing key is not a valid RSA JWK");
+        }
+        if (rsaKey.getPrivateExponent() == null) {
+            throw new TokenGenerationException("The simulator signing key has no private part");
+        }
+        return rsaKey;
+    }
+
+    private static String readDefaultSigningKey() {
+        try (InputStream resource = JsonWebKeyService.class.getResourceAsStream(DEFAULT_SIGNING_KEY_RESOURCE)) {
+            if (resource == null) {
+                throw new TokenGenerationException("Missing resource " + DEFAULT_SIGNING_KEY_RESOURCE);
+            }
+            return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException ioException) {
+            throw new TokenGenerationException("Impossible to read " + DEFAULT_SIGNING_KEY_RESOURCE, ioException);
+        }
     }
 }
 
