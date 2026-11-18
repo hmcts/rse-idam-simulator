@@ -92,32 +92,29 @@ public class SimulatorService {
                 "Idam Simulator: No User for this userName " + userName
             );
         }
-        Boolean tokenExpired = userService.getByEmail(userName).stream()
-            .map(SimObject::getMostRecentJwTokenUnixTime)
-            .map(t -> System.currentTimeMillis() > t + tokenExpirationMs).findFirst().get();
-
-        if (tokenExpired || userService.getByEmail(userName).get().getMostRecentJwToken() == null) {
-            LOG.info("Token not existing or expired and will be regenerated");
+        String cachedToken = userInMemory.get().getMostRecentJwToken();
+        if (!jwTokenGenerator.isUnexpiredAndSignedByCurrentKey(cachedToken)) {
+            LOG.info("Token not existing, expired or not signed by the current key and will be regenerated");
             return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
         }
         LOG.info("Use token in cache");
-        return userService.getByEmail(userName).get().getMostRecentJwToken();
+        return cachedToken;
     }
 
-    public void updateTokenInUser(String username, String token) {
+    public synchronized void updateTokenInUser(String username, String token) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(username);
         SimObject user = userInMemory.get();
         user.setMostRecentJwToken(token);
         userService.putSimObject(user.getId(), user);
     }
 
-    public void updateTokenInUserFromCode(String code, String token) {
+    public synchronized void updateTokenInUserFromCode(String code, String token) {
         SimObject user = checkUserInMemoryNotEmptyByCode(code);
         user.setMostRecentJwToken(token);
         userService.putSimObject(user.getId(), user);
     }
 
-    public void invalidateAuthCode(String code) {
+    public synchronized void invalidateAuthCode(String code) {
         SimObject user = checkUserInMemoryNotEmptyByCode(code);
         user.setMostRecentCode(null);
         user.setMostRecentNonce(null);
@@ -165,7 +162,7 @@ public class SimulatorService {
         return geAuthCodeFromUserName(username, null);
     }
 
-    public String geAuthCodeFromUserName(String email, String nonce) {
+    public synchronized String geAuthCodeFromUserName(String email, String nonce) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByUserName(email);
         String mostRecentCode = generateNewCode(userInMemory);
         SimObject user = userInMemory.get();
@@ -174,12 +171,12 @@ public class SimulatorService {
         return mostRecentCode;
     }
 
-    public String generateOauth2CodeFromPin(String pin) {
+    public synchronized String generateOauth2CodeFromPin(String pin) {
         Optional<SimObject> userInMemory = checkUserInMemoryNotEmptyByPin(pin);
         return generateNewCode(userInMemory);
     }
 
-    public PinDetails createPinDetails(String firstName, String lastName) {
+    public synchronized PinDetails createPinDetails(String firstName, String lastName) {
         SimObject user = userService.getByName(firstName, lastName).get();
         String newPinCode = generateRandomString(PIN_LENGTH);
         user.setLastGeneratedPin(newPinCode);

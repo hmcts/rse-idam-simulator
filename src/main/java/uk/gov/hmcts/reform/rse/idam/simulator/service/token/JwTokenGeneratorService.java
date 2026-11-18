@@ -5,6 +5,7 @@ import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -89,5 +91,20 @@ public class JwTokenGeneratorService {
         }
 
         return signedJwt.serialize();
+    }
+
+    public boolean isUnexpiredAndSignedByCurrentKey(String token) {
+        if (token == null) {
+            return false;
+        }
+        try {
+            SignedJWT signedJwt = SignedJWT.parse(token);
+            Date expiry = signedJwt.getJWTClaimsSet().getExpirationTime();
+            return expiry != null
+                && expiry.after(new Date())
+                && signedJwt.verify(new RSASSAVerifier(jsonWebKeyService.getRsaKey().toPublicJWK()));
+        } catch (ParseException | JOSEException | RuntimeException exception) {
+            return false;
+        }
     }
 }
