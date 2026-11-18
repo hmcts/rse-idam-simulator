@@ -28,7 +28,7 @@ public class GetWelcomeSpringBootTest {
         RestTemplate restTemplate = new RestTemplate();
         URI uri = new URI("http://localhost:" + localServerPort + "/health");
         ResponseEntity<String> result = restTemplate.getForEntity(uri, String.class);
-        assertEquals("Request is not successful", 200, result.getStatusCodeValue());
+        assertEquals("Request is not successful", 200, result.getStatusCode().value());
         assertTrue("Body doesn't contents status", result.getBody().contains("status"));
     }
 
@@ -37,7 +37,7 @@ public class GetWelcomeSpringBootTest {
         RestTemplate restTemplate = new RestTemplate();
         URI uri = new URI("http://localhost:" + localServerPort + "/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en");
         ResponseEntity<String> result = restTemplate.getForEntity(uri, String.class);
-        assertEquals("Request is not successful", 200, result.getStatusCodeValue());
+        assertEquals("Request is not successful", 200, result.getStatusCode().value());
     }
 
 }

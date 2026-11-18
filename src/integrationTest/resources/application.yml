@@ -1,4 +1,8 @@
 ---
+spring:
+  cloud:
+    compatibility-verifier:
+      enabled: false
 idam:
   api:
     url: 'http://localhost:5556'
