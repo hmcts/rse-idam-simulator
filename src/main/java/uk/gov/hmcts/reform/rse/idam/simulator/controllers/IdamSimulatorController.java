@@ -398,7 +398,7 @@ public class IdamSimulatorController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idam Simulator: email is missing or null");
         }
 
-        userService.putSimObject(userId, SimObject.builder()
+        simulatorService.saveUser(userId, SimObject.builder()
             .email(request.getEmail())
             .surname(request.getSurname())
             .forename(request.getForename())
