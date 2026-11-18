@@ -28,6 +28,16 @@ jobs:
       run: ./gradlew build -i
 
 
+    # azure/docker-login points DOCKER_CONFIG at a new file holding only its own
+    # credential, so it must run before the hmctsprod login or the hmctspublic
+    # build cannot pull the base image from hmctsprod.
+    - name: "ACR Login - hmctspublic"
+      uses: azure/docker-login@v2
+      with:
+        login-server: ${{ env.AZURE_CONTAINER_REGISTRY_URL }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
     ###################################################
     # HMCTSPROD ACR
     ###################################################
@@ -50,15 +60,7 @@ jobs:
     ###################################################
     # HMCTSPUBLIC ACR - Push
     ###################################################
-    - name: Push to ACR
-      uses: azure/docker-login@v2
-      with:
-        login-server: ${{ env.AZURE_CONTAINER_REGISTRY_URL }}
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}
-
     - run: |
-        docker buildx create --name mybuilder --use
         docker buildx build --push --platform linux/amd64,linux/arm64 -t ${{ env.AZURE_CONTAINER_REGISTRY_URL }}/hmcts/rse/rse-idam-simulator:latest .
       if: github.ref == 'refs/heads/master'
 
