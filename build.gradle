@@ -133,7 +133,7 @@ dependencies {
 
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-  testImplementation 'com.github.hmcts:idam-java-client:4.0.0'
+  testImplementation 'com.github.hmcts:idam-java-client:4.1.0-CCD-8220'
 
   testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:5.0.3'
 
