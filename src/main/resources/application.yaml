@@ -5,9 +5,6 @@ simulator:
   jwt:
     issuer: http://localhost:5556/o
     expiration: 28800000 # milliseconds 8 hours / 28800000ms
-    # Private RSA JWK, as JSON, that signs tokens. Blank uses simulator-signing-key.json, so tokens survive restarts.
-    # That default is public, so anyone can forge a token for any user: the simulator must never be trusted by
-    # anything other than local development.
     signing-key: ${SIMULATOR_JWT_SIGNING_KEY:}
   openid:
     base-url: http://localhost:5556

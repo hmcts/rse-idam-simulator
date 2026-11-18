@@ -55,9 +55,6 @@ public class JsonWebKeyService {
         return signingRsaKey;
     }
 
-    /**
-     * The parse failure is deliberately not chained: its message can quote the key material.
-     */
     private static RSAKey parseSigningKey(String signingKey) {
         RSAKey rsaKey;
         try {
