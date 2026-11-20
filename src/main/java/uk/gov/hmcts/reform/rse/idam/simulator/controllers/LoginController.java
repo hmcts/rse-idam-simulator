@@ -69,8 +69,7 @@ public class LoginController {
                             @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
         // Like IDAM, a browser that has already logged in is signed straight in to the next service that asks, unless
         // the service asks for the login page with prompt=login or single sign-on is turned off.
-        boolean promptLogin = prompt != null && List.of(prompt.split(" ")).contains("login");
-        Optional<String> sessionUser = singleSignOn && !promptLogin
+        Optional<String> sessionUser = singleSignOn && !requiresLogin(prompt)
             ? simulatorService.getIdamSessionUser(idamSession) : Optional.empty();
         if (sessionUser.isPresent()) {
             LOG.info("Signing in {} from their existing session", sessionUser.get());
@@ -108,6 +107,10 @@ public class LoginController {
         // Without any quick login accounts there would be nothing to choose from, so show the form after all.
         model.addAttribute("pickerOnly", quickLoginOnly && !accountGroups.isEmpty());
         return "login";
+    }
+
+    static boolean requiresLogin(String prompt) {
+        return prompt != null && List.of(prompt.split(" ")).contains("login");
     }
 
     @PostMapping("/login")
