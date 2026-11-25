@@ -64,21 +64,27 @@ public class SimulatorService {
 
     public String generateIdTokenFromCode(String code, String serviceId, String grantType) {
         SimObject user = checkUserInMemoryNotEmptyByCode(code);
-        String token = jwTokenGenerator.generateToken(
+        return generateIdToken(user.getEmail(), serviceId, grantType, user.getMostRecentNonce());
+    }
+
+    public String generateIdToken(String username, String serviceId, String grantType, String nonce) {
+        return jwTokenGenerator.generateToken(
             issuer,
             tokenExpirationMs,
-            user.getEmail(),
+            username,
             serviceId,
             grantType,
-            "id_token",
-            user.getMostRecentNonce()
+            JwTokenGeneratorService.ID_TOKEN,
+            nonce
         );
-        LOG.info("Oidc id_token generated {} for {}", token, user.getEmail());
-        return token;
     }
 
     public String generateAToken(String userName, String clientID, String grantType) {
         return jwTokenGenerator.generateToken(issuer, tokenExpirationMs, userName, clientID, grantType);
+    }
+
+    public boolean isIdTokenIssuedBySimulator(String token) {
+        return jwTokenGenerator.isIdTokenIssuedBySimulator(token, issuer);
     }
 
     public String generateACachedToken(String userName, String clientID, String grantType) {

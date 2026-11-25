@@ -90,6 +90,14 @@ http://localhost:5556/login?redirect_uri=https%3A%2F%2Fwww.gov.uk&client_id=oneC
 - After login the response is redirected to https://www.gov.uk/?code=lBApYbFkrfLOsKtgkYRwAcACisa&state=12345&client_id=oneClientId&iss=http://fr-am:8080/openam/oauth2/hmcts
 - This response contains 2 idam cookies: Idam.Session and idam_ui_local
 
+## Ending a browser session
+
+By default, `GET /o/endSession` requires `id_token_hint` set to the `id_token` returned by `/o/token`.
+A missing or invalid hint returns HTTP 400. Pass `post_logout_redirect_uri` to redirect after logout
+(HTTP 302), or omit it for HTTP 204.
+
+Set `SIMULATOR_LOGIN_REQUIRE_ID_TOKEN_HINT=false` on the simulator to allow legacy callers to log out
+without a token hint.
 
 ## Building the application
 

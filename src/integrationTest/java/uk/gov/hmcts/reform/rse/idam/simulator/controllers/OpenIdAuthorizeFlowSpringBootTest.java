@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.rse.idam.simulator.controllers;
 
 import com.nimbusds.jwt.SignedJWT;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -10,6 +11,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -39,6 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -311,10 +314,12 @@ class OpenIdAuthorizeFlowSpringBootTest {
         var params = UriComponentsBuilder.fromUriString(signedIn.getResponse().getRedirectedUrl()).build()
             .getQueryParams();
         assertEquals("second-service", params.getFirst("state"));
-        exchangeCode(params.getFirst("code")).andExpect(status().isOk());
+        MvcResult token = exchangeCode(params.getFirst("code")).andExpect(status().isOk()).andReturn();
+        String idToken = objectMapper.readTree(token.getResponse().getContentAsString()).path("id_token").asString();
 
         mockMvc.perform(get("/o/endSession")
                 .cookie(session)
+                .param("id_token_hint", idToken)
                 .param("post_logout_redirect_uri", REDIRECT_URI))
             .andExpect(status().isFound())
             .andExpect(result -> assertEquals(REDIRECT_URI, result.getResponse().getRedirectedUrl()));
@@ -430,7 +435,15 @@ class OpenIdAuthorizeFlowSpringBootTest {
         addUser(email, "End", "Session");
         Cookie session = loginSession(email);
 
-        MvcResult result = mockMvc.perform(get("/o/endSession").cookie(session))
+        MvcResult token = mockMvc.perform(post("/o/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("client_id", CLIENT_ID)
+                .param("grant_type", "password")
+                .param("username", email))
+            .andExpect(status().isOk())
+            .andReturn();
+        String idToken = objectMapper.readTree(token.getResponse().getContentAsString()).path("id_token").asString();
+        MvcResult result = mockMvc.perform(get("/o/endSession").cookie(session).param("id_token_hint", idToken))
             .andExpect(status().isNoContent())
             .andReturn();
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).stream()
@@ -441,6 +454,41 @@ class OpenIdAuthorizeFlowSpringBootTest {
                 .param("client_id", CLIENT_ID)
                 .param("redirect_uri", REDIRECT_URI))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void invalidLogoutHintsAreRejectedBeforeEndingTheSession() throws Exception {
+        String email = uniqueEmail();
+        addUser(email, "Keep", "Session");
+        Cookie session = loginSession(email);
+        String accessToken = objectMapper.readTree(exchangeCode(authorizeForCode(email)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString()).path("access_token").asString();
+
+        mockMvc.perform(get("/o/endSession").cookie(session).param("post_logout_redirect_uri", REDIRECT_URI))
+            .andExpect(status().isBadRequest())
+            .andExpect(header().doesNotExist(HttpHeaders.LOCATION));
+
+        for (String invalidHint : List.of(" ", "not-a-token", accessToken)) {
+            mockMvc.perform(get("/o/endSession").cookie(session).param("id_token_hint", invalidHint))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+        }
+
+        mockMvc.perform(get("/login").cookie(session).param("client_id", CLIENT_ID).param("redirect_uri", REDIRECT_URI))
+            .andExpect(status().isFound());
+    }
+
+    @Nested
+    @TestPropertySource(properties = "SIMULATOR_LOGIN_REQUIRE_ID_TOKEN_HINT=false")
+    class LegacyLogout {
+
+        @Test
+        void redirectsWithoutATokenHint(@Autowired MockMvc legacyMockMvc) throws Exception {
+            legacyMockMvc.perform(get("/o/endSession").param("post_logout_redirect_uri", REDIRECT_URI))
+                .andExpect(status().isFound())
+                .andExpect(header().string(HttpHeaders.LOCATION, REDIRECT_URI))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
+        }
     }
 
     @Test

@@ -273,7 +273,7 @@ public class IdamSimulatorController {
             }
             token = simulatorService.generateACachedToken(username, clientId, grantType);
             refreshToken = simulatorService.generateAToken(username, clientId, grantType);
-            idToken = simulatorService.generateAToken(username, clientId, grantType);
+            idToken = simulatorService.generateIdToken(username, clientId, grantType, null);
             simulatorService.updateTokenInUser(username, token);
         }
 

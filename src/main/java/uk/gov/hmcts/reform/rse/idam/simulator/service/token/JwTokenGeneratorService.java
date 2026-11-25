@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -24,6 +25,7 @@ import java.util.UUID;
 @Component
 public class JwTokenGeneratorService {
 
+    public static final String ID_TOKEN = "id_token";
     private static final Logger LOG = LoggerFactory.getLogger(JsonWebKeyService.class);
 
     @Autowired
@@ -94,19 +96,30 @@ public class JwTokenGeneratorService {
     }
 
     public boolean isUnexpiredAndSignedByCurrentKey(String token, String issuer) {
-        if (token == null) {
-            return false;
+        return verifiedClaims(token, issuer).map(JWTClaimsSet::getExpirationTime)
+            .filter(expiry -> expiry.after(new Date())).isPresent();
+    }
+
+    public boolean isIdTokenIssuedBySimulator(String token, String issuer) {
+        return verifiedClaims(token, issuer)
+            .filter(claims -> ID_TOKEN.equals(claims.getClaim("tokenName")))
+            .isPresent();
+    }
+
+    private Optional<JWTClaimsSet> verifiedClaims(String token, String issuer) {
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
         }
         try {
             SignedJWT signedJwt = SignedJWT.parse(token);
             JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
-            Date expiry = claims.getExpirationTime();
-            return expiry != null
-                && expiry.after(new Date())
-                && issuer.equals(claims.getIssuer())
-                && signedJwt.verify(new RSASSAVerifier(jsonWebKeyService.getRsaKey().toPublicJWK()));
+            if (issuer.equals(claims.getIssuer())
+                && signedJwt.verify(new RSASSAVerifier(jsonWebKeyService.getRsaKey().toPublicJWK()))) {
+                return Optional.of(claims);
+            }
+            return Optional.empty();
         } catch (ParseException | JOSEException | RuntimeException exception) {
-            return false;
+            return Optional.empty();
         }
     }
 }

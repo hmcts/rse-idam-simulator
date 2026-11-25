@@ -165,6 +165,7 @@ public class IdamSimulatorControllersHappyPathTest {
     public void returnOpenIdToken() throws Exception {
         when(simulatorService.generateAToken(anyString(), anyString(), anyString())).thenReturn(TOKEN);
         when(simulatorService.generateACachedToken(anyString(), anyString(), anyString())).thenReturn(TOKEN);
+        when(simulatorService.generateIdToken(A_USER_NAME, CLIENT_ID_HMCTS, "grantable", null)).thenReturn(TOKEN);
         when(userService.getByEmail(anyString())).thenReturn(Optional.of(SimulatorDataFactory.createSimObject()));
 
         mockMvc.perform(post("/o/token")
@@ -186,7 +187,7 @@ public class IdamSimulatorControllersHappyPathTest {
             .andExpect(jsonPath("$.access_token").isString())
             .andReturn();
 
-        verify(simulatorService, times(2))
+        verify(simulatorService, times(1))
             .generateAToken(A_USER_NAME, CLIENT_ID_HMCTS, "grantable");
         verify(simulatorService, times(1))
             .generateACachedToken(A_USER_NAME, CLIENT_ID_HMCTS, "grantable");
