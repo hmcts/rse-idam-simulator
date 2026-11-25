@@ -92,12 +92,12 @@ http://localhost:5556/login?redirect_uri=https%3A%2F%2Fwww.gov.uk&client_id=oneC
 
 ## Ending a browser session
 
-By default, `GET /o/endSession` requires `id_token_hint` set to the `id_token` returned by `/o/token`.
-A missing or invalid hint returns HTTP 400. Pass `post_logout_redirect_uri` to redirect after logout
-(HTTP 302), or omit it for HTTP 204.
+`GET /o/endSession` clears the browser session. By default, it returns HTTP 302 to
+`post_logout_redirect_uri` only when `id_token_hint` is a valid ID token returned by `/o/token`.
+If the redirect URI or a valid hint is missing, the response is HTTP 204.
 
-Set `SIMULATOR_LOGIN_REQUIRE_ID_TOKEN_HINT=false` on the simulator to allow legacy callers to log out
-without a token hint.
+Set `SIMULATOR_LOGIN_REQUIRE_ID_TOKEN_HINT=false` on the simulator to allow legacy callers to redirect
+after logout without a token hint.
 
 ## Building the application
 

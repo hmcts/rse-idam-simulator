@@ -28,6 +28,7 @@ import uk.gov.hmcts.reform.rse.idam.simulator.service.user.LiveMemoryService;
 import uk.gov.hmcts.reform.rse.idam.simulator.service.user.PersistentStorageService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -443,6 +444,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andExpect(status().isOk())
             .andReturn();
         String idToken = objectMapper.readTree(token.getResponse().getContentAsString()).path("id_token").asString();
+        assertEquals("id_token", SignedJWT.parse(idToken).getJWTClaimsSet().getClaim("tokenName"));
         MvcResult result = mockMvc.perform(get("/o/endSession").cookie(session).param("id_token_hint", idToken))
             .andExpect(status().isNoContent())
             .andReturn();
@@ -457,25 +459,27 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     @Test
-    void invalidLogoutHintsAreRejectedBeforeEndingTheSession() throws Exception {
+    void missingOrInvalidLogoutHintsEndTheSessionWithoutRedirecting() throws Exception {
         String email = uniqueEmail();
-        addUser(email, "Keep", "Session");
-        Cookie session = loginSession(email);
+        addUser(email, "End", "Session");
         String accessToken = objectMapper.readTree(exchangeCode(authorizeForCode(email)).andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString()).path("access_token").asString();
 
-        mockMvc.perform(get("/o/endSession").cookie(session).param("post_logout_redirect_uri", REDIRECT_URI))
-            .andExpect(status().isBadRequest())
-            .andExpect(header().doesNotExist(HttpHeaders.LOCATION));
+        for (String invalidHint : Arrays.asList(null, " ", "not-a-token", accessToken)) {
+            Cookie session = loginSession(email);
+            var logout = get("/o/endSession").cookie(session).param("post_logout_redirect_uri", REDIRECT_URI);
+            if (invalidHint != null) {
+                logout.param("id_token_hint", invalidHint);
+            }
+            mockMvc.perform(logout)
+                .andExpect(status().isNoContent())
+                .andExpect(header().doesNotExist(HttpHeaders.LOCATION))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
 
-        for (String invalidHint : List.of(" ", "not-a-token", accessToken)) {
-            mockMvc.perform(get("/o/endSession").cookie(session).param("id_token_hint", invalidHint))
-                .andExpect(status().isBadRequest())
-                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+            mockMvc.perform(get("/login").cookie(session).param("client_id", CLIENT_ID)
+                    .param("redirect_uri", REDIRECT_URI))
+                .andExpect(status().isOk());
         }
-
-        mockMvc.perform(get("/login").cookie(session).param("client_id", CLIENT_ID).param("redirect_uri", REDIRECT_URI))
-            .andExpect(status().isFound());
     }
 
     @Nested
