@@ -55,6 +55,9 @@ public class LoginController {
     @Value("${simulator.login.single-sign-on:true}")
     private boolean singleSignOn;
 
+    @Value("${simulator.login.require-id-token-hint:true}")
+    private boolean requireIdTokenHint;
+
     /*
     Example of a call : http://localhost:5556/login?redirect_uri=toto&client_id=oneClientId&state=12345&ui_local=en
     */
@@ -157,12 +160,14 @@ public class LoginController {
      */
     @GetMapping("/o/endSession")
     public ResponseEntity<Object> endSession(
+        @RequestParam(value = "id_token_hint", required = false) String idTokenHint,
         @RequestParam(value = "post_logout_redirect_uri", required = false) String postLogoutRedirectUri,
         @CookieValue(name = IDAM_SESSION_COOKIE, required = false) String idamSession) {
         simulatorService.endIdamSession(idamSession);
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add(HttpHeaders.SET_COOKIE, IDAM_SESSION_COOKIE + "=; Path=/; Max-Age=0; HttpOnly");
-        if (postLogoutRedirectUri == null || postLogoutRedirectUri.isBlank()) {
+        if (postLogoutRedirectUri == null || postLogoutRedirectUri.isBlank()
+            || (requireIdTokenHint && !simulatorService.isIdTokenIssuedBySimulator(idTokenHint))) {
             return new ResponseEntity<>(httpHeaders, HttpStatus.NO_CONTENT);
         }
         httpHeaders.add(HttpHeaders.LOCATION, postLogoutRedirectUri);

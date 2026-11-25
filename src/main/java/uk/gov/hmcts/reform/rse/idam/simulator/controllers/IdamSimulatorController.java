@@ -131,7 +131,7 @@ public class IdamSimulatorController {
 
         String token = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
         String refreshToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
-        String idToken = simulatorService.generateAuthTokenFromCode(code, clientId, grantType);
+        String idToken = simulatorService.generateIdTokenFromCode(code, clientId, grantType);
         LOG.info("New oauth2 token Generated {}", token);
 
         simulatorService.updateTokenInUserFromCode(code, token);
@@ -273,7 +273,7 @@ public class IdamSimulatorController {
             }
             token = simulatorService.generateACachedToken(username, clientId, grantType);
             refreshToken = simulatorService.generateAToken(username, clientId, grantType);
-            idToken = simulatorService.generateAToken(username, clientId, grantType);
+            idToken = simulatorService.generateIdToken(username, clientId, grantType, null);
             simulatorService.updateTokenInUser(username, token);
         }
 
