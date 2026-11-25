@@ -145,6 +145,7 @@ public class IdamSimulatorControllersHappyPathTest {
     @Test
     public void returnOauth2Token() throws Exception {
         when(simulatorService.generateAuthTokenFromCode(anyString(), anyString(), anyString())).thenReturn(TOKEN);
+        when(simulatorService.generateIdTokenFromCode(anyString(), anyString(), anyString())).thenReturn("id-token");
         mockMvc.perform(post("/oauth2/token")
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                             .header(HttpHeaders.AUTHORIZATION,
@@ -154,9 +155,10 @@ public class IdamSimulatorControllersHappyPathTest {
                             .param("code", "123456"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.access_token").isString())
+            .andExpect(jsonPath("$.id_token").value("id-token"))
             .andReturn();
 
-        verify(simulatorService, times(3))
+        verify(simulatorService, times(2))
             .generateAuthTokenFromCode(anyString(), anyString(), anyString());
     }
 

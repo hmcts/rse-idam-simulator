@@ -4,6 +4,8 @@ import com.nimbusds.jwt.SignedJWT;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -299,8 +301,9 @@ class OpenIdAuthorizeFlowSpringBootTest {
             .andExpect(status().isBadRequest());
     }
 
-    @Test
-    void loggedInBrowserIsSignedStraightInUntilItsSessionEnds() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"/o/token", "/oauth2/token"})
+    void loggedInBrowserIsSignedStraightInUntilItsSessionEnds(String tokenEndpoint) throws Exception {
         String email = uniqueEmail();
         addUser(email, "Sam", "Session");
         Cookie session = loginSession(email);
@@ -315,7 +318,7 @@ class OpenIdAuthorizeFlowSpringBootTest {
         var params = UriComponentsBuilder.fromUriString(signedIn.getResponse().getRedirectedUrl()).build()
             .getQueryParams();
         assertEquals("second-service", params.getFirst("state"));
-        MvcResult token = exchangeCode(params.getFirst("code")).andExpect(status().isOk()).andReturn();
+        MvcResult token = exchangeCode(tokenEndpoint, params.getFirst("code")).andExpect(status().isOk()).andReturn();
         String idToken = objectMapper.readTree(token.getResponse().getContentAsString()).path("id_token").asString();
 
         mockMvc.perform(get("/o/endSession")
@@ -602,7 +605,11 @@ class OpenIdAuthorizeFlowSpringBootTest {
     }
 
     private ResultActions exchangeCode(String code) throws Exception {
-        return mockMvc.perform(post("/o/token")
+        return exchangeCode("/o/token", code);
+    }
+
+    private ResultActions exchangeCode(String tokenEndpoint, String code) throws Exception {
+        return mockMvc.perform(post(tokenEndpoint)
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .header(
                 HttpHeaders.AUTHORIZATION,
