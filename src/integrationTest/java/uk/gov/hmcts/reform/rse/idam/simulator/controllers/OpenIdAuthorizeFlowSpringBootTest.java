@@ -17,6 +17,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -413,16 +414,21 @@ class OpenIdAuthorizeFlowSpringBootTest {
         assertTrue(location.contains("state=a{b}c"), location);
     }
 
-    @Test
-    void promptLoginShowsTheFormEvenWithASession() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void promptLoginShowsTheFormEvenWithASessionAndLoginHint(boolean usePost) throws Exception {
         String email = uniqueEmail();
         addUser(email, "Pro", "Mpt");
         Cookie session = loginSession(email);
 
-        MvcResult authorize = mockMvc.perform(get("/o/authorize")
+        MockHttpServletRequestBuilder request = usePost
+            ? post("/o/authorize").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            : get("/o/authorize");
+        MvcResult authorize = mockMvc.perform(request
                 .param("client_id", CLIENT_ID)
                 .param("redirect_uri", REDIRECT_URI)
                 .param("response_type", "code")
+                .param("login_hint", email)
                 .param("prompt", "login"))
             .andExpect(status().isFound())
             .andReturn();

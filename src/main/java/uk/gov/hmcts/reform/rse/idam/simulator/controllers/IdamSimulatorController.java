@@ -468,7 +468,7 @@ public class IdamSimulatorController {
         checkAuthorizeRequiredParams(clientId, redirectUri);
 
         HttpHeaders httpHeaders = new HttpHeaders();
-        if (loginHint == null || loginHint.isBlank()) {
+        if (LoginController.requiresLogin(prompt) || loginHint == null || loginHint.isBlank()) {
             httpHeaders.add("Location", buildLoginLocation(clientId, redirectUri, state, responseType, nonce, prompt));
             return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
         }
